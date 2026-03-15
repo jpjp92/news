@@ -1,7 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 dotenv.config();
-import { createServer as createViteServer } from 'vite';
+// Vite is only needed for development, lazy loaded later
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import * as cheerio from 'cheerio';
@@ -15,9 +15,10 @@ export default app; // Export for Vercel serverless functions
 const PORT = process.env.PORT || 3000;
 
 // Initialize Gemini with API Key from environment variables
-const apiKeyToUse = process.env.GEMINI_API_KEY || '';
+// Support both uppercase and lowercase for consistency in Vercel UI
+const apiKeyToUse = process.env.GEMINI_API_KEY || process.env.gemini_api_key || '';
 if (!apiKeyToUse) {
-  console.warn('GEMINI_API_KEY is not set in environment variables');
+  console.warn('GEMINI_API_KEY is not set in environment variables. Check Vercel project settings.');
 }
 console.log(`Using API Key starting with: ${apiKeyToUse.substring(0, 10)}...`);
 const ai = new GoogleGenerativeAI(apiKeyToUse);
@@ -279,6 +280,7 @@ app.get('/api/news-analysis', async (req, res) => {
 
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
