@@ -11,7 +11,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 3000;
+export default app; // Export for Vercel serverless functions
+const PORT = process.env.PORT || 3000;
 
 // Initialize Gemini with API Key from environment variables
 const apiKeyToUse = process.env.GEMINI_API_KEY || '';
@@ -296,4 +297,7 @@ async function startServer() {
   });
 }
 
-startServer();
+// Only start the server if not running on Vercel as a serverless function
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  startServer();
+}
