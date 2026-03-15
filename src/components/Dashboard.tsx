@@ -42,20 +42,21 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
   return (
     <div className="p-4 space-y-6 pb-10 w-full overflow-x-hidden">
       <div className="flex justify-between items-end">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">일일 뉴스 분석 리포트</h1>
-          <p className="text-gray-600 dark:text-white/70">
-            네이버 뉴스를 활용한 AI 기반 인사이트
-            {modelUsed && <span className="ml-2 px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-md text-xs font-medium border border-indigo-200 dark:border-indigo-800">{modelUsed}</span>}
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white truncate">일일 뉴스 분석 리포트</h1>
+          <p className="text-sm md:text-base text-gray-600 dark:text-white/70 flex items-center gap-1 flex-wrap">
+            네이버 뉴스 AI 기반 인사이트
+            {modelUsed && <span className="px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-md text-[10px] md:text-xs font-medium border border-indigo-200 dark:border-indigo-800 shrink-0">{modelUsed}</span>}
           </p>
         </div>
         <button 
           onClick={fetchData}
           disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-white/40 dark:bg-slate-800/40 hover:bg-white/60 dark:hover:bg-slate-700/60 backdrop-blur-md border border-white/50 dark:border-white/10 rounded-xl text-indigo-700 dark:text-indigo-400 font-medium transition-all disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-2 md:px-4 md:py-2 bg-white/40 dark:bg-slate-800/40 hover:bg-white/60 dark:hover:bg-slate-700/60 backdrop-blur-md border border-white/50 dark:border-white/10 rounded-xl text-indigo-700 dark:text-indigo-400 font-medium transition-all disabled:opacity-50 text-sm shrink-0"
         >
-          <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
-          새로고침
+          <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+          <span className="hidden xs:inline">새로고침</span>
+          <span className="xs:hidden">갱신</span>
         </button>
       </div>
 
@@ -80,39 +81,39 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
       )}
 
       {/* Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <GlassCard className="p-6 flex items-center gap-4">
-          <div className="p-4 bg-indigo-100/50 dark:bg-indigo-900/30 rounded-2xl text-indigo-600 dark:text-indigo-400">
-            <BookOpen size={28} />
+      <div className="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-6">
+        <GlassCard className="p-3 md:p-6 flex flex-col md:flex-row items-center md:items-center gap-2 md:gap-4 text-center md:text-left">
+          <div className="p-2 md:p-4 bg-indigo-100/50 dark:bg-indigo-900/30 rounded-xl md:rounded-2xl text-indigo-600 dark:text-indigo-400">
+            <BookOpen size={20} className="md:w-7 md:h-7" />
           </div>
-          <div>
-            <p className="text-sm font-medium text-gray-500 dark:text-white/60">분석된 기사 수</p>
-            <h3 className="text-3xl font-bold text-gray-800 dark:text-white">
-              {loading ? "..." : data?.summaries?.length || 0}
+          <div className="min-w-0">
+            <p className="text-[10px] md:text-sm font-medium text-gray-500 dark:text-white/60 truncate">기사 수</p>
+            <h3 className="text-lg md:text-3xl font-bold text-gray-800 dark:text-white">
+              {loading ? ".." : data?.summaries?.length || 0}
             </h3>
           </div>
         </GlassCard>
         
-        <GlassCard className="p-6 flex items-center gap-4">
-          <div className="p-4 bg-purple-100/50 dark:bg-purple-900/30 rounded-2xl text-purple-600 dark:text-purple-400">
-            <Hash size={28} />
+        <GlassCard className="p-3 md:p-6 flex flex-col md:flex-row items-center md:items-center gap-2 md:gap-4 text-center md:text-left">
+          <div className="p-2 md:p-4 bg-purple-100/50 dark:bg-purple-900/30 rounded-xl md:rounded-2xl text-purple-600 dark:text-purple-400">
+            <Hash size={20} className="md:w-7 md:h-7" />
           </div>
-          <div>
-            <p className="text-sm font-medium text-gray-500 dark:text-white/60">핵심 이슈/키워드</p>
-            <h3 className="text-3xl font-bold text-gray-800 dark:text-white">
-              {loading ? "..." : data?.keyTopics?.length || 0}
+          <div className="min-w-0">
+            <p className="text-[10px] md:text-sm font-medium text-gray-500 dark:text-white/60 truncate">키워드</p>
+            <h3 className="text-lg md:text-3xl font-bold text-gray-800 dark:text-white">
+              {loading ? ".." : data?.keyTopics?.length || 0}
             </h3>
           </div>
         </GlassCard>
 
-        <GlassCard className="p-6 flex items-center gap-4">
-          <div className="p-4 bg-pink-100/50 dark:bg-pink-900/30 rounded-2xl text-pink-600 dark:text-pink-400">
-            <Activity size={28} />
+        <GlassCard className="p-3 md:p-6 flex flex-col md:flex-row items-center md:items-center gap-2 md:gap-4 text-center md:text-left">
+          <div className="p-2 md:p-4 bg-pink-100/50 dark:bg-pink-900/30 rounded-xl md:rounded-2xl text-pink-600 dark:text-pink-400">
+            <Activity size={20} className="md:w-7 md:h-7" />
           </div>
-          <div>
-            <p className="text-sm font-medium text-gray-500 dark:text-white/60">뉴스 카테고리</p>
-            <h3 className="text-3xl font-bold text-gray-800 dark:text-white">
-              {loading ? "..." : data?.categories?.length || 0}
+          <div className="min-w-0">
+            <p className="text-[10px] md:text-sm font-medium text-gray-500 dark:text-white/60 truncate">분류</p>
+            <h3 className="text-lg md:text-3xl font-bold text-gray-800 dark:text-white">
+              {loading ? ".." : data?.categories?.length || 0}
             </h3>
           </div>
         </GlassCard>
