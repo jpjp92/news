@@ -125,6 +125,24 @@ news_monitoring/
    npm run dev
    ```
 
+## 🌐 Deployment (배포)
+
+이 프로젝트는 Docker를 지원하며, 다양한 클라우드 플랫폼에 쉽게 배포할 수 있습니다.
+
+### Docker를 이용한 배포
+1. 이미지 빌드:
+   ```bash
+   docker build -t news-monitoring .
+   ```
+2. 컨테이너 실행:
+   ```bash
+   docker run -p 3000:3000 --env GEMINI_API_KEY=your_key_here news-monitoring
+   ```
+
+### 추천 플랫폼
+- **Vercel / Railway / Fly.io**: GitHub 레포지토리를 연동하면 자동으로 빌드 및 배포가 진행됩니다.
+- 배포 시 `GEMINI_API_KEY` 환경 변수를 반드시 설정해야 합니다.
+
 ## 📄 라이선스
 
 Apache-2.0
