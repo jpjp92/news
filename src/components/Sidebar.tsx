@@ -11,7 +11,7 @@ interface SidebarProps {
 
 export function Sidebar({ activeTab = 'dashboard', setActiveTab = () => {}, isOpen = true, setIsOpen = () => {} }: SidebarProps) {
   return (
-    <GlassCard className={`h-[calc(100vh-2rem)] m-4 flex flex-col transition-all duration-300 hidden md:flex ${isOpen ? 'w-64' : 'w-20'} dark:bg-slate-900/60 dark:border-white/5`}>
+    <GlassCard className={`h-[calc(100vh-2rem)] m-4 flex flex-col transition-all duration-300 hidden md:flex ${isOpen ? 'w-64' : 'w-20'} bg-white/60 dark:bg-slate-900/60 border-white/40 dark:border-white/5`}>
       <div className={`p-4 flex items-center ${isOpen ? 'justify-between' : 'justify-center'}`}>
         {isOpen ? (
           <>
@@ -19,7 +19,7 @@ export function Sidebar({ activeTab = 'dashboard', setActiveTab = () => {}, isOp
               <div className="bg-gradient-to-br from-purple-500 to-indigo-500 p-2 rounded-xl text-white flex-shrink-0">
                 <Hexagon size={24} />
               </div>
-              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600 whitespace-nowrap">
+              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-700 to-indigo-700 dark:from-purple-400 dark:to-indigo-400 whitespace-nowrap">
                 뉴스 트렌드 분석
               </span>
             </div>

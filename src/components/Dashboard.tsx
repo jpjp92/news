@@ -33,9 +33,9 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
     const calculated = data.categories.map(cat => ({
       label: cat.name,
       articles: cat.count,
-      sentiment: 50 + (Math.random() * 30) // Mocking sentiment over categories for now
+      sentiment: Number(cat.averageSentiment) || 50
     }));
-    console.log('[DASHBOARD] Calculated chartData:', calculated);
+    console.log('[DASHBOARD] Calculated chartData from real API results:', calculated);
     return calculated;
   }, [data]);
 

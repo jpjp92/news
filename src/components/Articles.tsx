@@ -33,9 +33,9 @@ export function Articles() {
         // Actually, there's no direct sentiment in summaries. 
         // I should probably have updated the server to include sentiment in summaries too for better filtering.
         // But for now, let's try to match category sentiment from keyTopics as a fallback.
-        const topic = data?.keyTopics.find(t => t.keyword === article.category || article.title.includes(t.keyword));
-        if (!topic) return sentimentFilter === 'all';
-        return topic.sentiment === sentimentFilter;
+        const summarySentiment = article.sentiment; // Use the new individual sentiment field
+        if (!summarySentiment) return sentimentFilter === 'all';
+        return summarySentiment === sentimentFilter;
       });
     }
     if (searchQuery.trim()) {

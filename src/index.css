@@ -5,6 +5,8 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
+@variant dark (&:where(.dark, .dark *));
+
 body {
   @apply transition-colors duration-300 antialiased;
   font-family: var(--font-sans);

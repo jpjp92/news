@@ -216,15 +216,37 @@ app.get('/api/news-analysis', async (req, res) => {
     {
       "overallTrend": "현재 수집된 뉴스들의 핵심 이슈와 전반적인 흐름을 한국어 2-3문장으로 집약적으로 요약.",
       "categories": [
-        { "name": "카테고리명 (정치, 경제, 사회, 생활/문화, IT/과학, 세계)", "count": 1 }
+        { 
+          "name": "카테고리명 (정치, 경제, 사회, 생활/문화, IT/과학, 세계)", 
+          "count": 1,
+          "averageSentiment": "1-100 사이의 평균 감정 점수"
+        }
       ],
       "keyTopics": [
-        { "keyword": "핵심 키워드 (한국어)", "sentiment": "positive/negative/neutral", "score": 1-100 }
+        { 
+          "keyword": "핵심 키워드 (한국어)", 
+          "sentiment": "positive/negative/neutral", 
+          "score": "1-100 사이의 점수 (해당 키워드의 화제성 또는 강도)" 
+        }
       ],
       "summaries": [
-        { "title": "원본 헤드라인", "summary": "한국어 1줄 요약(50자 이내)", "category": "카테고리명", "url": "원본 URL" }
+        { 
+          "title": "원본 헤드라인", 
+          "summary": "한국어 1줄 요약(50자 이내)", 
+          "category": "카테고리명", 
+          "url": "원본 URL",
+          "sentiment": "positive/negative/neutral",
+          "sentimentScore": "1-100 사이의 점수 (매우 부정적 1 ~ 매우 긍정적 100, 중립은 50 근처)"
+        }
       ]
     }
+    
+    SENTIMENT GUIDELINES:
+    - POSITIVE: 호재, 성장, 개선, 성공, 혜택, 긍정적 변화
+    - NEGATIVE: 악재, 하락, 갈등, 사고, 비판, 우려, 부정적 영향
+    - NEUTRAL: 단순 정보 전달, 발표, 일상적 소식, 대립되는 의견이 균형을 이룸
+    
+    Ensure sentiment scores are differentiated (don't use 100 or 50 for everything).
     `;
 
     const normalizedModel = currentModel.toLowerCase();

@@ -14,17 +14,10 @@ export function Analytics() {
     const sortedCategories = [...data.categories].sort((a, b) => b.count - a.count);
     
     return sortedCategories.map(cat => {
-      // Find topics related to this category for a more granular sentiment
-      // If none, we can use a randomized average sentiment or global average for visualization
-      const relevantTopics = data.keyTopics.filter(t => t.keyword.includes(cat.name) || cat.name.includes(t.keyword));
-      const avgSentiment = relevantTopics.length > 0 
-        ? relevantTopics.reduce((acc, t) => acc + t.score, 0) / relevantTopics.length 
-        : 50 + (Math.random() * 20); // Default to a neutral/slightly positive base if no mapping
-
       return {
         label: cat.name,
         articles: cat.count,
-        sentiment: Math.round(avgSentiment)
+        sentiment: Number(cat.averageSentiment) || 50
       };
     });
   }, [data]);

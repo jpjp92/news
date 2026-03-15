@@ -50,7 +50,7 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => setIsFocused(true)}
             onKeyDown={handleKeyDown}
-            className="w-full bg-white/30 dark:bg-slate-800/40 border border-white/40 dark:border-white/10 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 placeholder-gray-500 dark:placeholder-gray-400 text-gray-700 dark:text-gray-200"
+            className="w-full bg-slate-100/50 dark:bg-slate-800/40 border border-slate-200/50 dark:border-white/10 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 placeholder-slate-500 dark:placeholder-gray-400 text-slate-800 dark:text-gray-200"
           />
           {isFocused && recentSearches.length > 0 && (
             <div className="absolute top-full left-0 w-full mt-2 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-2xl shadow-xl overflow-hidden z-20">
