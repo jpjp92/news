@@ -72,7 +72,23 @@ news_monitoring/
 - **프리미엄 UI/UX**: 글래스모피즘 기반의 현대적 디자인과 완벽한 다크 모드 지원.
 - **라이트 모드 최적화**: 라이트 모드에서의 가독성 문제를 해결하고, Tailwind v4 테마 전략을 최적화하여 부드러운 테마 전환 제공.
 
-## ✨ 최근 주요 업데이트 (2026.03.15)
+## ✨ 최근 주요 업데이트 (2026.04.15)
+
+### 1. 버그 수정 및 코드 정리
+
+- **타입 정의 수정**: `NewsAnalysis` 인터페이스에 서버 응답과 불일치하던 `averageSentiment`, `sentiment`, `sentimentScore` 필드 추가 → 감성 필터 기능 정상화.
+- **보안 수정**: `vite.config.ts`의 `define`에서 서버 전용 `GEMINI_API_KEY`가 클라이언트 번들에 노출되던 문제 제거.
+- **코드 정리**: `extractAndFixJson` 내 항상 `null`을 반환하던 데드 코드 제거, 디버그용 `console.log` 제거.
+- **환경 변수 로딩 개선**: `server.ts`에서 `.env.local`(Vercel CLI pull 파일)을 `.env`보다 먼저 로드하도록 수정.
+
+### 2. 로컬 개발 환경 정리
+
+- **`vercel dev` 비권장**: Vercel 프록시 라우팅이 Vite 모듈 요청을 가로채는 구조적 충돌로 인해 `vercel dev` 대신 `npm run dev` 사용으로 통일.
+- **`vercel.json` 정리**: `devCommand` 제거, 프로덕션 라우팅(`routes`) 전용으로 단순화.
+
+---
+
+## ✨ 이전 업데이트 (2026.03.15)
 
 ### 1. Vercel 배포 및 안정화
 - **빌드 오류 수정**: `@vercel/static-build`와 `@vercel/node`를 혼합 구성하여 Vite + Express 구조의 배포 안정성 확보.
@@ -117,6 +133,8 @@ news_monitoring/
 - [x] **Phase 1 완료**: 실시간 데이터 기반 분석 차트 연동.
 - [x] **Phase 2 완료**: 뉴스 검색 및 감성 필터링 고도화.
 - [x] **Vercel 최적화**: 서버리스 환경 배포 및 안정성 확보.
+- [x] **타입 정합성 확보**: 서버 응답과 프론트엔드 타입 정의 일치, 감성 필터 정상화.
+- [x] **보안 강화**: 서버 전용 API 키의 클라이언트 번들 노출 차단.
 - [ ] **[작업 예정]** Supabase 연동을 통한 데이터 영구 저장 및 히스토리 관리.
 - [ ] **[작업 예정]** 주간/월간 뉴스 트렌드 자동 보고서 생성.
 
@@ -137,11 +155,16 @@ news_monitoring/
    npm install
    ```
 2. 환경 설정:
-   `.env` 파일에 `GEMINI_API_KEY`를 설정하세요.
+   `.env` 또는 `.env.local` 파일에 `GEMINI_API_KEY`를 설정하세요.
+   ```bash
+   # Vercel CLI를 사용하는 경우 (프로젝트 연결 후)
+   vercel env pull .env.local
+   ```
 3. 로컬 서버 실행:
    ```bash
    npm run dev
    ```
+   > **참고**: `vercel dev`는 이 프로젝트 구조(Express + Vite 통합)와 충돌하므로 사용하지 마세요.
 
 ## 🌐 Deployment (배포)
 

@@ -30,13 +30,11 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
 
   const chartData = useMemo(() => {
     if (!data || !data.categories) return [];
-    const calculated = data.categories.map(cat => ({
+    return data.categories.map(cat => ({
       label: cat.name,
       articles: cat.count,
       sentiment: Number(cat.averageSentiment) || 50
     }));
-    console.log('[DASHBOARD] Calculated chartData from real API results:', calculated);
-    return calculated;
   }, [data]);
 
   return (

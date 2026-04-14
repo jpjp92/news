@@ -2,9 +2,9 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 
 export interface NewsAnalysis {
   overallTrend: string;
-  categories: { name: string; count: number }[];
+  categories: { name: string; count: number; averageSentiment?: number }[];
   keyTopics: { keyword: string; sentiment: string; score: number }[];
-  summaries: { title: string; summary: string; category: string; url?: string }[];
+  summaries: { title: string; summary: string; category: string; url?: string; sentiment?: string; sentimentScore?: number }[];
 }
 
 interface NewsContextType {

@@ -1,6 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
-dotenv.config();
+dotenv.config({ path: '.env.local' }); // Vercel pulled env vars
+dotenv.config(); // fallback to .env
 // Vite is only needed for development, lazy loaded later
 import * as path from 'path';
 import { fileURLToPath } from 'url';
@@ -99,19 +100,7 @@ function extractAndFixJson(text: string): any {
   try {
     return JSON.parse(jsonCandidate);
   } catch (e) {
-    // Attempt cleaning unescaped quotes in the candidate
-    try {
-      const cleaned = jsonCandidate.replace(/"(.*?)"/g, (match, p1) => {
-        // This is dangerous but might help for simple cases
-        // Only do this if we find obviously broken patterns
-        return match; 
-      });
-      // Instead of complex regex, let's just try to remove the most common offenders
-      // which are internal unescaped quotes.
-      return null; // For now, rely on prompt strictness and basic extract
-    } catch (innerE) {
-      return null;
-    }
+    return null;
   }
 }
 
