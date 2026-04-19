@@ -24,7 +24,7 @@ if (!apiKeyToUse) {
 console.log(`Using API Key starting with: ${apiKeyToUse.substring(0, 10)}...`);
 const ai = new GoogleGenerativeAI(apiKeyToUse);
 
-const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemma-3-1b-it', 'gemma-3-4b-it'];
+const GEMINI_MODELS = ['gemma-3-12b-it', 'gemma-3-27b-it'];
 let currentModelIndex = 0;
 
 // Limit to top 30 headlines for analysis (5 per category * 6 categories = 30)
