@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 export default app; // Export for Vercel serverless functions
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 // Initialize Gemini with API Key from environment variables
 // Support both uppercase and lowercase for consistency in Vercel UI

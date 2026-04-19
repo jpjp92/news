@@ -11,3 +11,48 @@ body {
   @apply transition-colors duration-300 antialiased;
   font-family: var(--font-sans);
 }
+
+/* Dark mode — deep navy background */
+.dark-bg {
+  background:
+    radial-gradient(ellipse at top left, #1a2b5c 0%, transparent 60%),
+    radial-gradient(ellipse at bottom right, #0f1e3d 0%, transparent 55%),
+    linear-gradient(160deg, #0a1428 0%, #0f1e3d 100%);
+}
+
+/* Orb animations */
+.orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+  animation: orbFloat 20s ease-in-out infinite;
+}
+.orb-1 {
+  width: 520px; height: 520px;
+  background: oklch(0.45 0.18 240);
+  opacity: 0.45;
+  top: -80px; left: -100px;
+  animation-delay: 0s;
+}
+.orb-2 {
+  width: 640px; height: 640px;
+  background: oklch(0.5 0.16 210);
+  opacity: 0.35;
+  bottom: -200px; right: -150px;
+  animation-delay: -7s;
+}
+.orb-3 {
+  width: 400px; height: 400px;
+  background: oklch(0.42 0.2 270);
+  opacity: 0.28;
+  top: 40%; left: 55%;
+  animation-delay: -13s;
+}
+
+@keyframes orbFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%       { transform: translate(40px, -30px) scale(1.05); }
+  66%       { transform: translate(-30px, 40px) scale(0.95); }
+}
