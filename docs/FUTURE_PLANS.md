@@ -48,23 +48,23 @@ CREATE TABLE category_stats (
 
 -- ③ 키워드
 CREATE TABLE keyword_stats (
-  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  session_id UUID NOT NULL REFERENCES news_sessions(id) ON DELETE CASCADE,
-  keyword    TEXT NOT NULL,
-  score      INT  NOT NULL DEFAULT 0,
-  sentiment  TEXT NOT NULL CHECK (sentiment IN ('positive', 'neutral', 'negative'))
+  id         UUID  PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id UUID  NOT NULL REFERENCES news_sessions(id) ON DELETE CASCADE,
+  keyword    TEXT  NOT NULL,
+  score      FLOAT NOT NULL DEFAULT 0,  -- Gemma가 소수점 반환 가능
+  sentiment  TEXT  NOT NULL CHECK (sentiment IN ('positive', 'neutral', 'negative'))
 );
 
 -- ④ 기사 요약
 CREATE TABLE article_summaries (
-  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  session_id      UUID NOT NULL REFERENCES news_sessions(id) ON DELETE CASCADE,
-  title           TEXT NOT NULL,
+  id              UUID  PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id      UUID  NOT NULL REFERENCES news_sessions(id) ON DELETE CASCADE,
+  title           TEXT  NOT NULL,
   summary         TEXT,
   category        TEXT,
   url             TEXT,
-  sentiment       TEXT CHECK (sentiment IN ('positive', 'neutral', 'negative')),
-  sentiment_score INT
+  sentiment       TEXT  CHECK (sentiment IN ('positive', 'neutral', 'negative')),
+  sentiment_score FLOAT  -- Gemma가 소수점 반환 가능 (예: 72.5)
 );
 
 -- 인덱스 (시계열 조회용)
