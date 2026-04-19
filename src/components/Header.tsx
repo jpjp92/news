@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Bell, Sun, Moon, Menu, History, X } from 'lucide-react';
+import { Search, Sun, Moon, Menu, History } from 'lucide-react';
 import { GlassCard } from './GlassCard';
 import { useTheme } from '../context/ThemeContext';
 import { useNews } from '../context/NewsContext';
@@ -84,20 +84,13 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-4">
-        <button 
+        <button
           onClick={toggleTheme}
           className="p-2 rounded-full bg-white/30 dark:bg-slate-800/40 hover:bg-white/50 dark:hover:bg-slate-700/60 text-gray-600 dark:text-gray-300 transition-all border border-transparent hover:border-white/20"
           title={theme === 'dark' ? '라이트 모드' : '다크 모드'}
         >
           {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
         </button>
-        <button className="p-2 rounded-full bg-white/30 dark:bg-slate-800/40 hover:bg-white/50 dark:hover:bg-slate-700/60 text-gray-600 dark:text-gray-300 transition-all border border-transparent hover:border-white/20 relative">
-          <Bell size={20} />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
-        </button>
-        <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 border-2 border-white dark:border-slate-700 shadow-sm overflow-hidden">
-          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User" className="w-full h-full object-cover" />
-        </div>
       </div>
     </GlassCard>
   );

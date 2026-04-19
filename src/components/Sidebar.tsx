@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Newspaper, TrendingUp, Settings, LogOut, Hexagon, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { LayoutDashboard, Newspaper, TrendingUp, Settings, Hexagon, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { GlassCard } from './GlassCard';
 
 interface SidebarProps {
@@ -20,7 +20,7 @@ export function Sidebar({ activeTab = 'dashboard', setActiveTab = () => {}, isOp
                 <Hexagon size={24} />
               </div>
               <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-700 to-indigo-700 dark:from-purple-400 dark:to-indigo-400 whitespace-nowrap">
-                뉴스 트렌드 분석
+                NewsDash
               </span>
             </div>
             <button 
@@ -52,10 +52,7 @@ export function Sidebar({ activeTab = 'dashboard', setActiveTab = () => {}, isOp
       </div>
 
       <div className="p-4">
-        <nav className="space-y-2">
-          <NavItem icon={<Settings size={20} />} label="설정" isOpen={isOpen} />
-          <NavItem icon={<LogOut size={20} />} label="로그아웃" isOpen={isOpen} />
-        </nav>
+        <NavItem icon={<Settings size={20} />} label="설정" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} isOpen={isOpen} />
       </div>
     </GlassCard>
   );

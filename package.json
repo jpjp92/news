@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx server.ts",
     "build:client": "vite build",
-    "build:server": "tsx -e 'import { build } from \"esbuild\"; build({ entryPoints: [\"server.ts\"], bundle: true, platform: \"node\", format: \"esm\", outfile: \"dist/server.js\", external: [\"vite\", \"path\", \"url\", \"express\", \"dotenv\", \"cheerio\", \"@google/generative-ai\"] })'",
+    "build:server": "tsx -e 'import { build } from \"esbuild\"; build({ entryPoints: [\"server.ts\"], bundle: true, platform: \"node\", format: \"esm\", outfile: \"dist/server.js\", external: [\"vite\", \"path\", \"url\", \"express\", \"dotenv\", \"cheerio\", \"@google/generative-ai\", \"@supabase/supabase-js\"] })'",
     "build": "npm run clean && npm run build:client && npm run build:server",
     "start": "NODE_ENV=production node dist/server.js",
     "preview": "vite preview",
@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@supabase/supabase-js": "^2.103.3",
     "@tailwindcss/vite": "^4.1.14",
     "@vitejs/plugin-react": "^5.0.4",
     "cheerio": "^1.2.0",

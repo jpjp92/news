@@ -9,8 +9,10 @@ import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { Articles } from './components/Articles';
 import { Analytics } from './components/Analytics';
+import { Settings } from './components/Settings';
 import { NewsProvider } from './context/NewsContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { SettingsProvider } from './context/SettingsContext';
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -19,12 +21,12 @@ function AppContent() {
 
   return (
     <div className={`h-screen flex overflow-hidden ${theme === 'dark' ? 'dark dark-bg' : 'bg-slate-50'} transition-colors duration-500 relative`}>
-      {/* Light mode decorative glow */}
+      {/* Light mode orbs */}
       {theme !== 'dark' && (
         <>
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-500/20 rounded-full blur-[120px] pointer-events-none"></div>
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-500/20 rounded-full blur-[120px] pointer-events-none"></div>
-          <div className="absolute top-[20%] right-[20%] w-[20%] h-[20%] rounded-full blur-[80px] pointer-events-none bg-pink-300/30"></div>
+          <div className="orb orb-light-1"></div>
+          <div className="orb orb-light-2"></div>
+          <div className="orb orb-light-3"></div>
         </>
       )}
       {/* Dark mode orbs */}
@@ -44,6 +46,7 @@ function AppContent() {
           {activeTab === 'dashboard' && <Dashboard setActiveTab={setActiveTab} />}
           {activeTab === 'articles' && <Articles />}
           {activeTab === 'analytics' && <Analytics />}
+          {activeTab === 'settings' && <Settings />}
         </main>
       </div>
     </div>
@@ -53,9 +56,11 @@ function AppContent() {
 export default function App() {
   return (
     <ThemeProvider>
-      <NewsProvider>
-        <AppContent />
-      </NewsProvider>
+      <SettingsProvider>
+        <NewsProvider>
+          <AppContent />
+        </NewsProvider>
+      </SettingsProvider>
     </ThemeProvider>
   );
 }

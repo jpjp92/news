@@ -7,6 +7,7 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 import * as cheerio from 'cheerio';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { createClient } from '@supabase/supabase-js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,6 +24,14 @@ if (!apiKeyToUse) {
 }
 console.log(`Using API Key starting with: ${apiKeyToUse.substring(0, 10)}...`);
 const ai = new GoogleGenerativeAI(apiKeyToUse);
+
+// Supabase client
+const supabaseUrl = process.env.SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_KEY || '';
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+if (!supabase) {
+  console.warn('[Supabase] SUPABASE_URL or SUPABASE_KEY missing — DB saving disabled.');
+}
 
 const GEMINI_MODELS = ['gemma-3-12b-it', 'gemma-3-27b-it'];
 let currentModelIndex = 0;
@@ -103,6 +112,237 @@ function extractAndFixJson(text: string): any {
     return null;
   }
 }
+
+async function saveSessionToDb(
+  analysis: any,
+  modelUsed: string,
+  rawResponse: object,
+  isError: boolean,
+  errorMsg?: string
+) {
+  if (!supabase) return;
+  try {
+    const { data: session, error: sessionErr } = await supabase
+      .from('news_sessions')
+      .insert({
+        article_count: isError ? 0 : (analysis.summaries?.length ?? 0),
+        overall_trend: isError ? null : (analysis.overallTrend ?? null),
+        model_used: modelUsed,
+        is_error: isError,
+        error_msg: errorMsg ?? null,
+        raw_data: rawResponse,
+      })
+      .select('id')
+      .single();
+
+    if (sessionErr || !session) {
+      console.error('[Supabase] Failed to insert news_session:', sessionErr);
+      return;
+    }
+
+    const sessionId = session.id;
+
+    if (isError) return;
+
+    const categoryRows = (analysis.categories ?? []).map((c: any) => ({
+      session_id: sessionId,
+      category: c.name ?? 'Unknown',
+      count: Number(c.count) || 0,
+      avg_sentiment: parseFloat(c.averageSentiment) || null,
+    }));
+
+    const keywordRows = (analysis.keyTopics ?? []).map((k: any) => ({
+      session_id: sessionId,
+      keyword: k.keyword ?? '',
+      score: parseFloat(k.score) || 0,
+      sentiment: ['positive', 'neutral', 'negative'].includes(k.sentiment) ? k.sentiment : null,
+    }));
+
+    const articleRows = (analysis.summaries ?? []).map((s: any) => ({
+      session_id: sessionId,
+      title: s.title ?? '',
+      summary: s.summary ?? null,
+      category: s.category ?? null,
+      url: s.url ?? null,
+      sentiment: ['positive', 'neutral', 'negative'].includes(s.sentiment) ? s.sentiment : null,
+      sentiment_score: parseFloat(s.sentimentScore) || null,
+    }));
+
+    const inserts = [];
+    if (categoryRows.length) inserts.push(supabase.from('category_stats').insert(categoryRows));
+    if (keywordRows.length)  inserts.push(supabase.from('keyword_stats').insert(keywordRows));
+    if (articleRows.length)  inserts.push(supabase.from('article_summaries').insert(articleRows));
+
+    const results = await Promise.all(inserts);
+    results.forEach(({ error }) => {
+      if (error) console.error('[Supabase] Insert error:', error.message);
+    });
+
+    console.log(`[Supabase] Session ${sessionId} saved — ${articleRows.length} articles, ${keywordRows.length} keywords`);
+  } catch (e: any) {
+    console.error('[Supabase] Unexpected error during save:', e.message);
+  }
+}
+
+async function isDuplicateSession(currentUrls: string[]): Promise<boolean> {
+  if (!supabase) return false;
+  const validUrls = currentUrls.filter(Boolean);
+  if (!validUrls.length) return false;
+  try {
+    const { data } = await supabase
+      .from('news_sessions')
+      .select('raw_data')
+      .eq('is_error', false)
+      .order('collected_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (!data?.raw_data?.rawHeadlines) return false;
+
+    const prevUrls = new Set<string>(
+      (data.raw_data.rawHeadlines as any[]).map((h: any) => h.url).filter(Boolean)
+    );
+    const overlap = validUrls.filter(u => prevUrls.has(u)).length;
+    const ratio = overlap / validUrls.length;
+    console.log(`[Supabase] URL overlap with last session: ${Math.round(ratio * 100)}%`);
+    return ratio >= 0.7;
+  } catch {
+    return false;
+  }
+}
+
+function getPeriodStart(period: string): string {
+  const now = new Date();
+  if (period === 'today') {
+    const start = new Date(now);
+    start.setHours(0, 0, 0, 0);
+    return start.toISOString();
+  }
+  const days = period === '30d' ? 30 : 7;
+  return new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
+}
+
+// ── 히스토리 API ──────────────────────────────────────────────────────────────
+
+app.get('/api/history/sessions', async (req, res) => {
+  if (!supabase) return res.status(503).json({ success: false, error: 'DB not connected' });
+  const period = (req.query.period as string) || '7d';
+  const { data, error } = await supabase
+    .from('news_sessions')
+    .select('id, collected_at, article_count, model_used, is_error, overall_trend')
+    .gte('collected_at', getPeriodStart(period))
+    .order('collected_at', { ascending: false });
+
+  if (error) return res.status(500).json({ success: false, error: error.message });
+  res.json({ success: true, data: data || [] });
+});
+
+app.get('/api/history/keywords', async (req, res) => {
+  if (!supabase) return res.status(503).json({ success: false, error: 'DB not connected' });
+  const period = (req.query.period as string) || '7d';
+
+  const { data: sessions, error: sErr } = await supabase
+    .from('news_sessions')
+    .select('id')
+    .eq('is_error', false)
+    .gte('collected_at', getPeriodStart(period));
+
+  if (sErr || !sessions?.length) return res.json({ success: true, data: [] });
+
+  const { data: keywords, error: kErr } = await supabase
+    .from('keyword_stats')
+    .select('keyword, score, sentiment')
+    .in('session_id', sessions.map(s => s.id));
+
+  if (kErr) return res.status(500).json({ success: false, error: kErr.message });
+
+  const map = new Map<string, { count: number; totalScore: number; pos: number; neg: number; neu: number }>();
+  for (const k of keywords || []) {
+    const e = map.get(k.keyword) || { count: 0, totalScore: 0, pos: 0, neg: 0, neu: 0 };
+    e.count++;
+    e.totalScore += k.score || 0;
+    if (k.sentiment === 'positive') e.pos++;
+    else if (k.sentiment === 'negative') e.neg++;
+    else e.neu++;
+    map.set(k.keyword, e);
+  }
+
+  const data = Array.from(map.entries())
+    .map(([keyword, v]) => ({
+      keyword,
+      appearance_count: v.count,
+      avg_score: Math.round((v.totalScore / v.count) * 10) / 10,
+      pos_count: v.pos,
+      neg_count: v.neg,
+      neu_count: v.neu,
+      dominant_sentiment: v.pos >= v.neg && v.pos >= v.neu ? 'positive'
+        : v.neg >= v.pos && v.neg >= v.neu ? 'negative' : 'neutral',
+    }))
+    .sort((a, b) => b.appearance_count - a.appearance_count || b.avg_score - a.avg_score)
+    .slice(0, 20);
+
+  res.json({ success: true, data });
+});
+
+app.get('/api/history/sentiment', async (req, res) => {
+  if (!supabase) return res.status(503).json({ success: false, error: 'DB not connected' });
+  const period = (req.query.period as string) || '7d';
+
+  const { data: sessions } = await supabase
+    .from('news_sessions')
+    .select('id, collected_at')
+    .eq('is_error', false)
+    .gte('collected_at', getPeriodStart(period))
+    .order('collected_at', { ascending: true });
+
+  if (!sessions?.length) return res.json({ success: true, data: [] });
+
+  const { data: keywords } = await supabase
+    .from('keyword_stats')
+    .select('session_id, sentiment')
+    .in('session_id', sessions.map(s => s.id));
+
+  // 세션 → 날짜 매핑
+  const sessionDateMap = new Map<string, string[]>();
+  for (const s of sessions) {
+    const date = s.collected_at.substring(0, 10);
+    if (!sessionDateMap.has(date)) sessionDateMap.set(date, []);
+    sessionDateMap.get(date)!.push(s.id);
+  }
+
+  // 세션별 감성 집계
+  const kwBySession = new Map<string, { pos: number; neg: number; neu: number }>();
+  for (const k of keywords || []) {
+    const e = kwBySession.get(k.session_id) || { pos: 0, neg: 0, neu: 0 };
+    if (k.sentiment === 'positive') e.pos++;
+    else if (k.sentiment === 'negative') e.neg++;
+    else e.neu++;
+    kwBySession.set(k.session_id, e);
+  }
+
+  // 날짜별 집계
+  const data = Array.from(sessionDateMap.entries())
+    .map(([date, sIds]) => {
+      let pos = 0, neg = 0, neu = 0;
+      for (const sid of sIds) {
+        const kw = kwBySession.get(sid) || { pos: 0, neg: 0, neu: 0 };
+        pos += kw.pos; neg += kw.neg; neu += kw.neu;
+      }
+      const total = pos + neg + neu || 1;
+      return {
+        date,
+        positive_pct: Math.round(pos / total * 100),
+        negative_pct: Math.round(neg / total * 100),
+        neutral_pct: Math.round(neu / total * 100),
+        session_count: sIds.length,
+      };
+    })
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  res.json({ success: true, data });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 app.get('/api/news-analysis', async (req, res) => {
   try {
@@ -241,44 +481,53 @@ app.get('/api/news-analysis', async (req, res) => {
     const normalizedModel = currentModel.toLowerCase();
     const isGemini = normalizedModel.includes('gemini');
     console.log(`[SERVER] Requesting analysis using model: ${currentModel} | JSON Mode: ${isGemini}`);
-    
-    const aiResponse = await ai.getGenerativeModel({ 
-      model: currentModel,
-      generationConfig: {
-        ...(isGemini ? { responseMimeType: "application/json" } : {}),
-        maxOutputTokens: 6000,
-        temperature: 0, // Set to 0 for maximum consistency
-      }
-    }).generateContent(prompt);
+
+    // 중복 체크와 Gemma 분석을 병렬 실행 (지연 없음)
+    const [isDuplicate, aiResponse] = await Promise.all([
+      isDuplicateSession(topHeadlines.map(h => h.url)),
+      ai.getGenerativeModel({
+        model: currentModel,
+        generationConfig: {
+          ...(isGemini ? { responseMimeType: "application/json" } : {}),
+          maxOutputTokens: 6000,
+          temperature: 0,
+        }
+      }).generateContent(prompt),
+    ]);
 
     const responseText = aiResponse.response.text() || '';
     let analysis = extractAndFixJson(responseText);
 
     if (!analysis) {
       console.warn(`[${currentModel}] Failed to extract valid JSON. Raw response:`, responseText);
-      
-      // Fallback for smaller models that might fail to generate valid JSON
+
+      const errMsg = `JSON parsing failed for model ${currentModel}`;
+      if (!isDuplicate) saveSessionToDb({}, currentModel, { rawResponse: responseText }, true, errMsg);
+
       analysis = {
-        overallTrend: `[Model ${currentModel} response processing failed]`,
-        categories: [{ name: "Error", count: 1 }],
-        keyTopics: [{ keyword: "Parsing Error", sentiment: "negative", score: 100 }],
-        summaries: [{ title: "Error parsing AI response", summary: "The model did not return a valid JSON format.", category: "Error" }]
+        overallTrend: `[${currentModel} 응답 처리 실패 — 잠시 후 다시 시도해주세요]`,
+        categories: [],
+        keyTopics: [],
+        summaries: []
       };
     } else {
-      // Ensure required arrays exist and have valid structure
       if (!Array.isArray(analysis.summaries)) analysis.summaries = [];
       if (!Array.isArray(analysis.categories)) analysis.categories = [];
       if (!Array.isArray(analysis.keyTopics)) analysis.keyTopics = [];
-      
-      // Sanitize fields to ensure they don't break UI
       analysis.overallTrend = analysis.overallTrend || "";
+
+      if (isDuplicate) {
+        console.log('[Supabase] 중복 세션 감지 — DB 저장 생략');
+      } else {
+        saveSessionToDb(analysis, currentModel, { data: analysis, rawHeadlines: topHeadlines }, false);
+      }
     }
-    
-    res.json({ 
-      success: true, 
-      data: analysis, 
+
+    res.json({
+      success: true,
+      data: analysis,
       rawHeadlines: topHeadlines,
-      modelUsed: currentModel 
+      modelUsed: currentModel
     });
   } catch (error: any) {
     console.error('Error fetching/analyzing news:', error);
