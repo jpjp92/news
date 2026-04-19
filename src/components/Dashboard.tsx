@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { GlassCard } from './GlassCard';
 import { TrendChart } from './TrendChart';
-import { Activity, BookOpen, Hash, RefreshCw, AlertCircle, ChevronDown, ChevronUp, ArrowRight, Sparkles } from 'lucide-react';
+import { BookOpen, Hash, RefreshCw, AlertCircle, ChevronDown, ChevronUp, ArrowRight, Sparkles, TrendingUp, TrendingDown } from 'lucide-react';
+import { SentimentGauge } from './SentimentGauge';
 import { useNews } from '../context/NewsContext';
 
 interface DashboardProps {
@@ -27,6 +28,16 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
   const displayedSummaries = showAllSummaries 
     ? filteredSummaries 
     : filteredSummaries.slice(0, 5);
+
+  const sentimentStats = useMemo(() => {
+    const topics = data?.keyTopics || [];
+    if (!topics.length) return { posPct: 0, negPct: 0 };
+    const pos = topics.filter(t => t.sentiment === 'positive').length;
+    const neg = topics.filter(t => t.sentiment === 'negative').length;
+    const posPct = Math.round((pos / topics.length) * 100);
+    const negPct = Math.round((neg / topics.length) * 100);
+    return { posPct, negPct };
+  }, [data?.keyTopics]);
 
   const chartData = useMemo(() => {
     if (!data || !data.categories) return [];
@@ -79,39 +90,51 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
       )}
 
       {/* Stats Row */}
-      <div className="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-6">
-        <GlassCard className="p-3 md:p-6 flex flex-col md:flex-row items-center md:items-center gap-2 md:gap-4 text-center md:text-left">
-          <div className="p-2 md:p-4 bg-indigo-100/50 dark:bg-indigo-900/30 rounded-xl md:rounded-2xl text-indigo-600 dark:text-indigo-400">
-            <BookOpen size={20} className="md:w-7 md:h-7" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        <GlassCard className="p-3 md:p-5 flex flex-col md:flex-row items-center gap-2 md:gap-4 text-center md:text-left">
+          <div className="p-2 md:p-3 bg-indigo-100/50 dark:bg-indigo-900/30 rounded-xl text-indigo-600 dark:text-indigo-400">
+            <BookOpen size={20} className="md:w-6 md:h-6" />
           </div>
           <div className="min-w-0">
-            <p className="text-[10px] md:text-sm font-medium text-gray-500 dark:text-white/60 truncate">기사 수</p>
-            <h3 className="text-lg md:text-3xl font-bold text-gray-800 dark:text-white">
-              {loading ? ".." : data?.summaries?.length || 0}
-            </h3>
-          </div>
-        </GlassCard>
-        
-        <GlassCard className="p-3 md:p-6 flex flex-col md:flex-row items-center md:items-center gap-2 md:gap-4 text-center md:text-left">
-          <div className="p-2 md:p-4 bg-purple-100/50 dark:bg-purple-900/30 rounded-xl md:rounded-2xl text-purple-600 dark:text-purple-400">
-            <Hash size={20} className="md:w-7 md:h-7" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[10px] md:text-sm font-medium text-gray-500 dark:text-white/60 truncate">키워드</p>
-            <h3 className="text-lg md:text-3xl font-bold text-gray-800 dark:text-white">
-              {loading ? ".." : data?.keyTopics?.length || 0}
+            <p className="text-[10px] md:text-xs font-medium text-gray-500 dark:text-white/60 truncate">기사 수</p>
+            <h3 className="text-xl md:text-3xl font-bold text-gray-800 dark:text-white">
+              {loading ? '..' : data?.summaries?.length || 0}
             </h3>
           </div>
         </GlassCard>
 
-        <GlassCard className="p-3 md:p-6 flex flex-col md:flex-row items-center md:items-center gap-2 md:gap-4 text-center md:text-left">
-          <div className="p-2 md:p-4 bg-pink-100/50 dark:bg-pink-900/30 rounded-xl md:rounded-2xl text-pink-600 dark:text-pink-400">
-            <Activity size={20} className="md:w-7 md:h-7" />
+        <GlassCard className="p-3 md:p-5 flex flex-col md:flex-row items-center gap-2 md:gap-4 text-center md:text-left">
+          <div className="p-2 md:p-3 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-xl text-emerald-600 dark:text-emerald-400">
+            <TrendingUp size={20} className="md:w-6 md:h-6" />
           </div>
           <div className="min-w-0">
-            <p className="text-[10px] md:text-sm font-medium text-gray-500 dark:text-white/60 truncate">분류</p>
-            <h3 className="text-lg md:text-3xl font-bold text-gray-800 dark:text-white">
-              {loading ? ".." : data?.categories?.length || 0}
+            <p className="text-[10px] md:text-xs font-medium text-gray-500 dark:text-white/60 truncate">긍정 비율</p>
+            <h3 className="text-xl md:text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+              {loading ? '..' : `${sentimentStats.posPct}%`}
+            </h3>
+          </div>
+        </GlassCard>
+
+        <GlassCard className="p-3 md:p-5 flex flex-col md:flex-row items-center gap-2 md:gap-4 text-center md:text-left">
+          <div className="p-2 md:p-3 bg-rose-100/50 dark:bg-rose-900/30 rounded-xl text-rose-600 dark:text-rose-400">
+            <TrendingDown size={20} className="md:w-6 md:h-6" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] md:text-xs font-medium text-gray-500 dark:text-white/60 truncate">부정 비율</p>
+            <h3 className="text-xl md:text-3xl font-bold text-rose-500 dark:text-rose-400">
+              {loading ? '..' : `${sentimentStats.negPct}%`}
+            </h3>
+          </div>
+        </GlassCard>
+
+        <GlassCard className="p-3 md:p-5 flex flex-col md:flex-row items-center gap-2 md:gap-4 text-center md:text-left">
+          <div className="p-2 md:p-3 bg-purple-100/50 dark:bg-purple-900/30 rounded-xl text-purple-600 dark:text-purple-400">
+            <Hash size={20} className="md:w-6 md:h-6" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] md:text-xs font-medium text-gray-500 dark:text-white/60 truncate">키워드</p>
+            <h3 className="text-xl md:text-3xl font-bold text-gray-800 dark:text-white">
+              {loading ? '..' : data?.keyTopics?.length || 0}
             </h3>
           </div>
         </GlassCard>
@@ -212,6 +235,8 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
         </div>
 
         <div className="space-y-6">
+          <SentimentGauge topics={data?.keyTopics || []} loading={loading} />
+
           <GlassCard className="p-6">
             <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">주요 카테고리 분포</h3>
             <div className="space-y-3">
@@ -232,33 +257,46 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
             </div>
           </GlassCard>
 
-          <GlassCard className="p-6">
-            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">실시간 인기 키워드</h3>
-            <div className="flex flex-wrap gap-2">
+          <GlassCard className="p-5">
+            <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-4">실시간 인기 키워드</h3>
+            <div className="space-y-0">
               {loading ? (
-                <div className="animate-pulse flex gap-2 flex-wrap">
-                  <div className="h-8 w-20 bg-white/50 rounded-full"></div>
-                  <div className="h-8 w-24 bg-white/50 rounded-full"></div>
-                  <div className="h-8 w-16 bg-white/50 rounded-full"></div>
+                <div className="animate-pulse space-y-3">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="flex items-center gap-2 py-2">
+                      <div className="h-3 w-5 bg-white/30 rounded"></div>
+                      <div className="h-3 flex-1 bg-white/30 rounded"></div>
+                      <div className="h-2 w-16 bg-white/30 rounded"></div>
+                    </div>
+                  ))}
                 </div>
-              ) : (
-                data?.keyTopics?.map((topic, idx) => {
-                  const isPositive = topic.sentiment === 'positive';
-                  const isNegative = topic.sentiment === 'negative';
-                  return (
-                    <span 
-                      key={idx} 
-                      className={`px-3 py-1.5 rounded-full text-sm font-medium border ${
-                        isPositive ? 'bg-emerald-100/50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400' :
-                        isNegative ? 'bg-rose-100/50 dark:bg-rose-900/30 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-400' :
-                        'bg-gray-100/50 dark:bg-slate-800/50 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'
-                      }`}
-                    >
-                      {topic.keyword} <span className="opacity-60 text-xs ml-1">{topic.score}</span>
+              ) : (() => {
+                const topics = data?.keyTopics || [];
+                const maxScore = Math.max(...topics.map(t => t.score), 1);
+                return topics.map((topic, idx) => (
+                  <div key={idx} className="flex items-center gap-2 py-2 border-b border-black/5 dark:border-white/10 last:border-0">
+                    <span className="text-[10px] text-gray-400 dark:text-white/30 font-mono w-5 flex-shrink-0">
+                      {String(idx + 1).padStart(2, '0')}
                     </span>
-                  );
-                })
-              )}
+                    <span className="text-sm text-gray-700 dark:text-white/85 font-medium flex-1 truncate">
+                      {topic.keyword}
+                    </span>
+                    <span className={`text-xs flex-shrink-0 ${
+                      topic.sentiment === 'positive' ? 'text-emerald-500' :
+                      topic.sentiment === 'negative' ? 'text-rose-500' :
+                      'text-slate-400'
+                    }`}>
+                      {topic.sentiment === 'positive' ? '↑' : topic.sentiment === 'negative' ? '↓' : '—'}
+                    </span>
+                    <div className="w-16 h-1 bg-black/10 dark:bg-white/[0.07] rounded-full overflow-hidden flex-shrink-0">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-indigo-400 to-purple-400"
+                        style={{ width: `${Math.round((topic.score / maxScore) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                ));
+              })()}
             </div>
           </GlassCard>
         </div>
