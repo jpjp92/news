@@ -1,9 +1,15 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { GlassCard } from './GlassCard';
 import { TrendChart } from './TrendChart';
-import { BookOpen, Hash, RefreshCw, AlertCircle, ChevronDown, ChevronUp, ArrowRight, Sparkles, TrendingUp, TrendingDown } from 'lucide-react';
+import { BookOpen, Hash, RefreshCw, AlertCircle, ChevronDown, ChevronUp, ArrowRight, Sparkles, TrendingUp, TrendingDown, CalendarDays, BarChart3 } from 'lucide-react';
 import { SentimentGauge } from './SentimentGauge';
 import { useNews } from '../context/NewsContext';
+
+interface PeriodStats {
+  session_count: number;
+  article_count: number;
+  positive_pct: number | null;
+}
 
 interface DashboardProps {
   setActiveTab?: (tab: string) => void;
@@ -12,6 +18,14 @@ interface DashboardProps {
 export function Dashboard({ setActiveTab }: DashboardProps) {
   const { data, modelUsed, loading, error, fetchData, searchQuery } = useNews();
   const [showAllSummaries, setShowAllSummaries] = useState(false);
+  const [periodStats, setPeriodStats] = useState<{ week: PeriodStats; month: PeriodStats } | null>(null);
+
+  useEffect(() => {
+    fetch('/api/history/stats')
+      .then(r => r.json())
+      .then(json => { if (json.success) setPeriodStats(json.data); })
+      .catch(() => {});
+  }, []);
 
   const filteredSummaries = useMemo(() => {
     const allSummaries = data?.summaries || [];
@@ -139,6 +153,50 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
           </div>
         </GlassCard>
       </div>
+
+      {/* 주간 · 월간 통계 */}
+      {periodStats && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+          {[
+            { label: '주간 통계', sublabel: '최근 7일', icon: <CalendarDays size={16} />, stats: periodStats.week, color: 'indigo' },
+            { label: '월간 통계', sublabel: '최근 30일', icon: <BarChart3 size={16} />, stats: periodStats.month, color: 'purple' },
+          ].map(({ label, sublabel, icon, stats, color }) => (
+            <GlassCard key={label} className="p-4 flex items-center gap-4">
+              <div className={`p-2.5 bg-${color}-100/50 dark:bg-${color}-900/30 rounded-xl text-${color}-600 dark:text-${color}-400 flex-shrink-0`}>
+                {icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline gap-2 mb-2">
+                  <p className="text-sm font-bold text-gray-700 dark:text-white">{label}</p>
+                  <p className="text-xs text-gray-400 dark:text-white/30">{sublabel}</p>
+                </div>
+                <div className="flex gap-4">
+                  <div>
+                    <p className="text-[10px] text-gray-400 dark:text-white/30">수집 기사</p>
+                    <p className="text-base font-bold text-gray-700 dark:text-white">{stats.article_count.toLocaleString()}개</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-400 dark:text-white/30">수집 세션</p>
+                    <p className="text-base font-bold text-gray-700 dark:text-white">{stats.session_count}회</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-400 dark:text-white/30">긍정 비율</p>
+                    <p className={`text-base font-bold ${stats.positive_pct !== null ? 'text-emerald-500' : 'text-gray-300 dark:text-white/20'}`}>
+                      {stats.positive_pct !== null ? `${stats.positive_pct}%` : '-'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setActiveTab?.('analytics')}
+                className="text-xs text-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors flex-shrink-0"
+              >
+                <ArrowRight size={14} />
+              </button>
+            </GlassCard>
+          ))}
+        </div>
+      )}
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

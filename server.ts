@@ -342,6 +342,71 @@ app.get('/api/history/sentiment', async (req, res) => {
   res.json({ success: true, data });
 });
 
+app.get('/api/history/articles', async (req, res) => {
+  if (!supabase) return res.status(503).json({ success: false, error: 'DB not connected' });
+  const period = (req.query.period as string) || 'today';
+
+  const { data: sessions, error: sErr } = await supabase
+    .from('news_sessions')
+    .select('id, collected_at')
+    .eq('is_error', false)
+    .gte('collected_at', getPeriodStart(period))
+    .order('collected_at', { ascending: false });
+
+  if (sErr || !sessions?.length) return res.json({ success: true, data: [], total: 0, session_count: 0 });
+
+  const { data: articles, error: aErr } = await supabase
+    .from('article_summaries')
+    .select('id, session_id, title, summary, category, url, sentiment, sentiment_score')
+    .in('session_id', sessions.map(s => s.id));
+
+  if (aErr) return res.status(500).json({ success: false, error: aErr.message });
+
+  // 제목 기준 중복 제거 (여러 세션에서 같은 기사 수집 가능)
+  const seen = new Set<string>();
+  const deduped = (articles || []).filter(a => {
+    if (seen.has(a.title)) return false;
+    seen.add(a.title);
+    return true;
+  });
+
+  res.json({ success: true, data: deduped, total: deduped.length, session_count: sessions.length });
+});
+
+async function getStatsByPeriod(period: string) {
+  if (!supabase) return { session_count: 0, article_count: 0, positive_pct: null };
+  const { data: sessions } = await supabase
+    .from('news_sessions')
+    .select('id, article_count')
+    .eq('is_error', false)
+    .gte('collected_at', getPeriodStart(period));
+
+  if (!sessions?.length) return { session_count: 0, article_count: 0, positive_pct: null };
+
+  const totalArticles = sessions.reduce((sum, s) => sum + (s.article_count || 0), 0);
+  const { data: keywords } = await supabase
+    .from('keyword_stats')
+    .select('sentiment')
+    .in('session_id', sessions.map(s => s.id));
+
+  const total = keywords?.length || 0;
+  const pos = keywords?.filter(k => k.sentiment === 'positive').length || 0;
+  return {
+    session_count: sessions.length,
+    article_count: totalArticles,
+    positive_pct: total > 0 ? Math.round(pos / total * 100) : null,
+  };
+}
+
+app.get('/api/history/stats', async (req, res) => {
+  if (!supabase) return res.status(503).json({ success: false, error: 'DB not connected' });
+  const [week, month] = await Promise.all([
+    getStatsByPeriod('7d'),
+    getStatsByPeriod('30d'),
+  ]);
+  res.json({ success: true, data: { week, month } });
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 app.get('/api/news-analysis', async (req, res) => {
