@@ -4,7 +4,52 @@
 
 ---
 
-## 2026-04-19
+## 2026-04-19 (3차)
+
+### Dashboard 섹션 헤더 폰트 통일
+- 카드 섹션 헤더 불일치 수정 (`text-lg`, `text-base` 혼재)
+- 전체 뉴스 트렌드 분석 / 최근 뉴스 요약 / 주요 카테고리 분포 → `text-sm` 통일
+- 실시간 인기 키워드 / 감성 분포는 이미 `text-sm` → 5개 섹션 헤더 일관성 확보
+
+### Dashboard 최근 뉴스 요약 헤더 모바일 개선
+- 제목·버튼 영역이 모바일에서 두 줄로 나뉘던 문제 수정
+- "전체 기사 보기" → "전체 기사"로 단축, `whitespace-nowrap` 추가
+- "축소하기" → "축소"로 단축, 아이콘 `size={16}` → `size={13}`
+
+### 모바일 사이드바 초기 상태 수정
+- 기존: `sidebarOpen = true` → 모바일 진입 시 드로어가 즉시 펼쳐진 상태
+- 변경: `useState(() => window.innerWidth >= 768)` → 모바일은 닫힘, 데스크탑은 열림으로 시작
+
+---
+
+## 2026-04-19 (2차)
+
+### Dashboard 초기 로드 개선 — DB 최신 세션 자동 표시
+- 기존: 마운트 시 `fetchData()` 호출 → 매번 크롤링 + Gemma 분석 실행
+- 변경: 마운트 시 `/api/history/latest-session` 호출 → DB 최신 세션 즉시 표시
+- 새로고침 버튼만 실제 크롤링 실행
+- `collectedAt` 필드 추가 → Dashboard 헤더에 "4/19 14:30 수집" 형태로 수집 시점 표시
+- `NewsContext`에 `collectedAt` 상태 추가
+
+### 신규 API
+- `GET /api/history/latest-session` — 최신 비에러 세션의 categories·keywords·articles 조합 반환
+
+### 모바일 사이드바 드로어
+- 기존: Sidebar `hidden md:flex` — 모바일에서 완전히 숨겨짐, 햄버거 버튼 동작 안 함
+- 변경: 모바일 전용 오버레이 드로어 추가 (`fixed inset-0 z-50`)
+  - 백드롭(반투명 오버레이) 탭 시 드로어 닫힘
+  - 메뉴 항목 선택 시 자동 닫힘 (`handleNav`)
+  - 데스크탑 사이드바(`hidden md:flex`)는 기존 동작 유지
+
+### Articles 모바일 필터 UI 개선
+- 감성 필터 버튼 4개가 모바일에서 세로 2줄로 표시되던 문제 수정
+- 버튼 패딩 `px-3 py-1.5` → `px-2 py-1`, 폰트 `text-xs` → `text-[11px]`
+- 아이콘 `size={12}` → `size={11}`, 간격·라벨 너비 축소
+- 기사 수 카운트 `flex-shrink-0` 추가
+
+---
+
+## 2026-04-19 (1차)
 
 ### Articles 탭 DB 기반 전환
 - 기존: `NewsContext.data.summaries` (현재 세션 메모리만 표시)

@@ -16,7 +16,7 @@ interface DashboardProps {
 }
 
 export function Dashboard({ setActiveTab }: DashboardProps) {
-  const { data, modelUsed, loading, error, fetchData, searchQuery } = useNews();
+  const { data, modelUsed, collectedAt, loading, error, fetchData, searchQuery } = useNews();
   const [showAllSummaries, setShowAllSummaries] = useState(false);
   const [periodStats, setPeriodStats] = useState<{ week: PeriodStats; month: PeriodStats } | null>(null);
 
@@ -70,6 +70,7 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
           <p className="text-sm md:text-base text-gray-600 dark:text-white/70 flex items-center gap-1 flex-wrap">
             네이버 뉴스 AI 기반 인사이트
             {modelUsed && <span className="px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-md text-[10px] md:text-xs font-medium border border-indigo-200 dark:border-indigo-800 shrink-0">{modelUsed}</span>}
+            {collectedAt && <span className="text-[10px] md:text-xs text-gray-400 dark:text-white/30 shrink-0">{new Date(collectedAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })} 수집</span>}
           </p>
         </div>
         <button 
@@ -211,7 +212,7 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
               <div className="p-2 bg-indigo-100/50 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400">
                 <Sparkles size={18} />
               </div>
-              <h3 className="text-lg font-bold text-gray-800 dark:text-white">전체 뉴스 트렌드 분석</h3>
+              <h3 className="text-sm font-bold text-gray-800 dark:text-white">전체 뉴스 트렌드 분석</h3>
             </div>
             {loading ? (
               <div className="animate-pulse space-y-3">
@@ -233,27 +234,27 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
           </GlassCard>
 
           <GlassCard className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-800 dark:text-white">최근 뉴스 요약</h3>
-              <div className="flex gap-3">
+            <div className="flex items-center justify-between mb-4 gap-2">
+              <h3 className="text-sm font-bold text-gray-800 dark:text-white whitespace-nowrap">최근 뉴스 요약</h3>
+              <div className="flex gap-2 flex-shrink-0">
                 {data && data.summaries.length > 5 && (
-                  <button 
+                  <button
                     onClick={() => setShowAllSummaries(!showAllSummaries)}
-                    className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center gap-1 font-medium transition-colors"
+                    className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-0.5 font-medium transition-colors whitespace-nowrap"
                   >
                     {showAllSummaries ? (
-                      <><ChevronUp size={16} /> 축소하기</>
+                      <><ChevronUp size={13} />축소</>
                     ) : (
-                      <><ChevronDown size={16} /> 모두 보기 ({data.summaries.length})</>
+                      <><ChevronDown size={13} />모두 보기 ({data.summaries.length})</>
                     )}
                   </button>
                 )}
                 {setActiveTab && (
-                  <button 
+                  <button
                     onClick={() => setActiveTab('articles')}
-                    className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 flex items-center gap-1 font-medium transition-colors"
+                    className="text-xs text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 flex items-center gap-0.5 font-medium transition-colors whitespace-nowrap"
                   >
-                    전체 기사 보기 <ArrowRight size={16} />
+                    전체 기사 <ArrowRight size={13} />
                   </button>
                 )}
               </div>
@@ -296,7 +297,7 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
           <SentimentGauge topics={data?.keyTopics || []} loading={loading} />
 
           <GlassCard className="p-6">
-            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">주요 카테고리 분포</h3>
+            <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-4">주요 카테고리 분포</h3>
             <div className="space-y-3">
               {loading ? (
                 <div className="animate-pulse space-y-3">

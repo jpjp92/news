@@ -4,6 +4,18 @@
 
 ---
 
+## 📋 Vercel 환경변수 확인
+
+Vercel 배포 시 아래 3개 환경변수가 설정되어 있어야 함. 누락 시 history API 전체 503 반환.
+
+```
+GEMINI_API_KEY
+SUPABASE_URL
+SUPABASE_KEY   # service_role 키 (anon 키 불가)
+```
+
+---
+
 ## 📋 Settings 설정값 API 실제 반영
 
 현재 Settings에서 저장한 값이 API 요청에 반영되지 않음.

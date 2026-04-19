@@ -13,6 +13,7 @@ interface NewsContextType {
   loading: boolean;
   error: string | null;
   fetchData: () => Promise<void>;
+  collectedAt: string | null;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   sentimentFilter: string;
@@ -27,6 +28,7 @@ const NewsContext = createContext<NewsContextType | undefined>(undefined);
 export function NewsProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<NewsAnalysis | null>(null);
   const [modelUsed, setModelUsed] = useState<string>('');
+  const [collectedAt, setCollectedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -52,6 +54,23 @@ export function NewsProvider({ children }: { children: ReactNode }) {
     setRecentSearches([]);
   };
 
+  // 마운트 시 DB 최신 세션 로드 (크롤링 없음)
+  useEffect(() => {
+    setLoading(true);
+    fetch('/api/history/latest-session')
+      .then(r => r.json())
+      .then(json => {
+        if (json.success) {
+          setData(json.data);
+          setModelUsed(json.modelUsed || '');
+          setCollectedAt(json.collectedAt || null);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  // 새로고침: 실제 크롤링 + Gemma 분석
   const fetchData = async () => {
     setLoading(true);
     setError(null);
@@ -61,6 +80,7 @@ export function NewsProvider({ children }: { children: ReactNode }) {
       if (json.success) {
         setData(json.data);
         setModelUsed(json.modelUsed || '');
+        setCollectedAt(new Date().toISOString());
       } else {
         setError(json.error || 'Failed to fetch data');
       }
@@ -71,18 +91,15 @@ export function NewsProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   return (
-    <NewsContext.Provider value={{ 
-      data, 
-      modelUsed, 
-      loading, 
-      error, 
-      fetchData, 
-      searchQuery, 
+    <NewsContext.Provider value={{
+      data,
+      modelUsed,
+      collectedAt,
+      loading,
+      error,
+      fetchData,
+      searchQuery,
       setSearchQuery,
       sentimentFilter,
       setSentimentFilter,

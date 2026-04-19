@@ -150,13 +150,13 @@ export function Articles() {
       {!loading && rawArticles.length > 0 && (
         <GlassCard className="p-3">
           <div className="flex items-center gap-2 mb-2.5">
-            <span className="text-[10px] font-bold text-gray-400 dark:text-white/30 uppercase tracking-wider w-12 flex-shrink-0">카테고리</span>
-            <div className="flex gap-1.5 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <span className="text-[10px] font-bold text-gray-400 dark:text-white/30 uppercase tracking-wider w-10 flex-shrink-0">카테고리</span>
+            <div className="flex gap-1 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {categories.map(cat => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
+                  className={`px-2 py-1 rounded-md text-[11px] font-medium whitespace-nowrap transition-all ${
                     selectedCategory === cat
                       ? 'bg-indigo-500 text-white shadow-sm'
                       : 'text-gray-500 dark:text-white/50 hover:bg-white/50 dark:hover:bg-white/5 hover:text-gray-700 dark:hover:text-white/80'
@@ -168,19 +168,19 @@ export function Articles() {
             </div>
           </div>
           <div className="border-t border-black/5 dark:border-white/10 mb-2.5" />
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold text-gray-400 dark:text-white/30 uppercase tracking-wider w-12 flex-shrink-0">감성</span>
-            <div className="flex gap-1.5">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-bold text-gray-400 dark:text-white/30 uppercase tracking-wider w-10 flex-shrink-0">감성</span>
+            <div className="flex gap-1 flex-1">
               {[
-                { id: 'all',      label: '전체', icon: <Activity size={12} />, active: 'bg-indigo-500' },
-                { id: 'positive', label: '긍정', icon: <Smile size={12} />,    active: 'bg-emerald-500' },
-                { id: 'neutral',  label: '중립', icon: <Meh size={12} />,      active: 'bg-slate-500' },
-                { id: 'negative', label: '부정', icon: <Frown size={12} />,    active: 'bg-rose-500' },
+                { id: 'all',      label: '전체', icon: <Activity size={11} />, active: 'bg-indigo-500' },
+                { id: 'positive', label: '긍정', icon: <Smile size={11} />,    active: 'bg-emerald-500' },
+                { id: 'neutral',  label: '중립', icon: <Meh size={11} />,      active: 'bg-slate-500' },
+                { id: 'negative', label: '부정', icon: <Frown size={11} />,    active: 'bg-rose-500' },
               ].map(f => (
                 <button
                   key={f.id}
                   onClick={() => setSentimentFilter(f.id)}
-                  className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  className={`flex items-center gap-0.5 px-2 py-1 rounded-md text-[11px] font-medium transition-all whitespace-nowrap ${
                     sentimentFilter === f.id
                       ? `${f.active} text-white shadow-sm`
                       : 'text-gray-500 dark:text-white/50 hover:bg-white/50 dark:hover:bg-white/5 hover:text-gray-700 dark:hover:text-white/80'
@@ -190,7 +190,7 @@ export function Articles() {
                 </button>
               ))}
             </div>
-            <span className="ml-auto text-xs text-gray-400 dark:text-white/30">{filteredArticles.length}개</span>
+            <span className="flex-shrink-0 text-[11px] text-gray-400 dark:text-white/30">{filteredArticles.length}개</span>
           </div>
         </GlassCard>
       )}

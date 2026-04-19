@@ -407,6 +407,38 @@ app.get('/api/history/stats', async (req, res) => {
   res.json({ success: true, data: { week, month } });
 });
 
+app.get('/api/history/latest-session', async (req, res) => {
+  if (!supabase) return res.status(503).json({ success: false, error: 'DB not connected' });
+
+  const { data: session, error: sErr } = await supabase
+    .from('news_sessions')
+    .select('id, overall_trend, model_used, collected_at')
+    .eq('is_error', false)
+    .order('collected_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (sErr || !session) return res.json({ success: false, error: 'No session found' });
+
+  const [{ data: cats }, { data: keywords }, { data: articles }] = await Promise.all([
+    supabase.from('category_stats').select('category, count, avg_sentiment').eq('session_id', session.id),
+    supabase.from('keyword_stats').select('keyword, score, sentiment').eq('session_id', session.id).order('score', { ascending: false }),
+    supabase.from('article_summaries').select('title, summary, category, url, sentiment, sentiment_score').eq('session_id', session.id),
+  ]);
+
+  res.json({
+    success: true,
+    modelUsed: session.model_used,
+    collectedAt: session.collected_at,
+    data: {
+      overallTrend: session.overall_trend || '',
+      categories: (cats || []).map(c => ({ name: c.category, count: c.count, averageSentiment: c.avg_sentiment })),
+      keyTopics: (keywords || []).map(k => ({ keyword: k.keyword, score: k.score, sentiment: k.sentiment || 'neutral' })),
+      summaries: (articles || []).map(a => ({ title: a.title, summary: a.summary, category: a.category, url: a.url, sentiment: a.sentiment, sentimentScore: a.sentiment_score })),
+    },
+  });
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 app.get('/api/news-analysis', async (req, res) => {
