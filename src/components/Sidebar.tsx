@@ -66,12 +66,15 @@ function NavItem({ icon, label, active = false, onClick, isOpen = true }: { icon
     <button
       onClick={onClick}
       className={`w-full flex items-center ${isOpen ? 'justify-start px-4' : 'justify-center px-0'} py-3 rounded-xl transition-all duration-200 ${
-        active 
-          ? 'bg-white/60 dark:bg-white/10 text-indigo-700 dark:text-white shadow-sm dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] font-bold' 
+        active
+          ? 'bg-white/60 dark:bg-white/[0.09] text-indigo-700 dark:text-white shadow-sm font-bold dark:border dark:border-white/[0.18] relative'
           : 'text-gray-600 dark:text-white/60 hover:bg-white/30 dark:hover:bg-white/5 hover:text-indigo-600 dark:hover:text-white'
       }`}
       title={!isOpen ? label : undefined}
     >
+      {active && (
+        <span className="hidden dark:block absolute -left-[17px] top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-indigo-400 shadow-[0_0_10px_rgba(129,140,248,0.8)]" />
+      )}
       <div className="flex-shrink-0">{icon}</div>
       {isOpen && <span className="ml-3 whitespace-nowrap">{label}</span>}
     </button>
