@@ -32,6 +32,12 @@ interface SentimentDay {
   session_count: number;
 }
 
+interface CategoryTotal {
+  category: string;
+  total: number;
+  avg_sentiment: number | null;
+}
+
 const PERIOD_LABELS: Record<Period, string> = {
   current: '현재 세션',
   today: '오늘',
@@ -57,6 +63,19 @@ export function Analytics() {
   const [sentimentTrend, setSentimentTrend] = useState<SentimentDay[]>([]);
   const [histLoading, setHistLoading] = useState(false);
   const [histError, setHistError] = useState<string | null>(null);
+  const [categoryTotals, setCategoryTotals] = useState<CategoryTotal[]>([]);
+  const [overviewTrend, setOverviewTrend] = useState<SentimentDay[]>([]);
+
+  // 마운트 시 전체 카테고리 집계 + 7d 트렌드 로드
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/history/category-totals?period=all').then(r => r.json()),
+      fetch('/api/history/sentiment?period=7d').then(r => r.json()),
+    ]).then(([cats, trend]) => {
+      if (cats.success) setCategoryTotals(cats.data);
+      if (trend.success) setOverviewTrend(trend.data);
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (period === 'current') return;
@@ -78,12 +97,12 @@ export function Analytics() {
       .finally(() => setHistLoading(false));
   }, [period]);
 
-  const currentChartData = useMemo(() => {
-    if (!data?.categories) return [];
-    return [...data.categories]
-      .sort((a, b) => b.count - a.count)
-      .map(cat => ({ label: cat.name, articles: cat.count, sentiment: Number(cat.averageSentiment) || 50 }));
-  }, [data]);
+  const overviewChartData = useMemo(() =>
+    overviewTrend.map(d => ({
+      label: formatDay(d.date),
+      articles: d.session_count,
+      sentiment: d.positive_pct,
+    })), [overviewTrend]);
 
   const sentimentChartData = useMemo(() =>
     sentimentTrend.map(d => ({
@@ -180,42 +199,71 @@ export function Analytics() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <GlassCard className="p-6">
-                <div className="flex items-center gap-3 mb-6">
+                <div className="flex items-center gap-3 mb-4">
                   <div className="p-3 bg-purple-100/50 dark:bg-purple-900/30 rounded-xl text-purple-600 dark:text-purple-400">
                     <PieChart size={24} />
                   </div>
-                  <h2 className="text-xl font-bold text-gray-800 dark:text-white">카테고리별 비중</h2>
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-800 dark:text-white">카테고리별 비중</h2>
+                    <p className="text-xs text-gray-500 dark:text-white/40">전체 수집 기사 누적 기준</p>
+                  </div>
                 </div>
                 <div className="space-y-4">
-                  {data?.categories?.map((cat, idx) => {
-                    const maxCount = Math.max(...(data.categories.map(c => c.count)), 1);
-                    return (
-                      <div key={idx}>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="font-medium text-gray-700 dark:text-gray-300">{cat.name}</span>
-                          <span className="text-gray-500 dark:text-gray-400">{cat.count}개</span>
+                  {categoryTotals.length > 0 ? (
+                    (() => {
+                      const maxTotal = Math.max(...categoryTotals.map(c => c.total), 1);
+                      const grandTotal = categoryTotals.reduce((s, c) => s + c.total, 0);
+                      return categoryTotals.map((cat, idx) => (
+                        <div key={idx}>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="font-medium text-gray-700 dark:text-gray-300">{cat.category}</span>
+                            <span className="text-gray-500 dark:text-gray-400">
+                              {cat.total}개 <span className="text-xs opacity-60">({Math.round(cat.total / grandTotal * 100)}%)</span>
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-100 dark:bg-white/10 rounded-full h-2">
+                            <div
+                              className="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full transition-all duration-500"
+                              style={{ width: `${(cat.total / maxTotal) * 100}%` }}
+                            />
+                          </div>
                         </div>
-                        <div className="w-full bg-gray-100 dark:bg-white/10 rounded-full h-2">
-                          <div
-                            className="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full transition-all duration-500"
-                            style={{ width: `${(cat.count / maxCount) * 100}%` }}
-                          />
+                      ));
+                    })()
+                  ) : (
+                    data?.categories?.map((cat, idx) => {
+                      const maxCount = Math.max(...(data.categories.map(c => c.count)), 1);
+                      return (
+                        <div key={idx}>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="font-medium text-gray-700 dark:text-gray-300">{cat.name}</span>
+                            <span className="text-gray-500 dark:text-gray-400">{cat.count}개</span>
+                          </div>
+                          <div className="w-full bg-gray-100 dark:bg-white/10 rounded-full h-2">
+                            <div
+                              className="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full transition-all duration-500"
+                              style={{ width: `${(cat.count / maxCount) * 100}%` }}
+                            />
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })
+                  )}
                 </div>
               </GlassCard>
 
               <GlassCard className="p-6 flex flex-col">
-                <div className="flex items-center gap-3 mb-6">
+                <div className="flex items-center gap-3 mb-4">
                   <div className="p-3 bg-pink-100/50 dark:bg-pink-900/30 rounded-xl text-pink-600 dark:text-pink-400">
                     <Activity size={24} />
                   </div>
-                  <h2 className="text-xl font-bold text-gray-800 dark:text-white">트렌드 오버뷰</h2>
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-800 dark:text-white">트렌드 오버뷰</h2>
+                    <p className="text-xs text-gray-500 dark:text-white/40">최근 7일 수집 세션 수 · 긍정 비율</p>
+                  </div>
                 </div>
                 <div className="flex-1 -mx-6 -mb-6 min-h-[220px]">
-                  <TrendChart data={currentChartData} transparent hideHeader className="!p-6" />
+                  <TrendChart data={overviewChartData.length > 0 ? overviewChartData : undefined} transparent hideHeader className="!p-6" />
                 </div>
               </GlassCard>
             </div>

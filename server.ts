@@ -398,6 +398,42 @@ async function getStatsByPeriod(period: string) {
   };
 }
 
+app.get('/api/history/category-totals', async (req, res) => {
+  if (!supabase) return res.status(503).json({ success: false, error: 'DB not connected' });
+  const period = (req.query.period as string) || 'all';
+
+  let sessionQuery = supabase.from('news_sessions').select('id').eq('is_error', false);
+  if (period !== 'all') sessionQuery = sessionQuery.gte('collected_at', getPeriodStart(period));
+
+  const { data: sessions, error: sErr } = await sessionQuery;
+  if (sErr || !sessions?.length) return res.json({ success: true, data: [] });
+
+  const { data: cats, error: cErr } = await supabase
+    .from('category_stats')
+    .select('category, count, avg_sentiment')
+    .in('session_id', sessions.map(s => s.id));
+
+  if (cErr) return res.status(500).json({ success: false, error: cErr.message });
+
+  const map = new Map<string, { total: number; sentimentSum: number; sentimentCount: number }>();
+  for (const c of cats || []) {
+    const e = map.get(c.category) || { total: 0, sentimentSum: 0, sentimentCount: 0 };
+    e.total += c.count || 0;
+    if (c.avg_sentiment != null) { e.sentimentSum += c.avg_sentiment; e.sentimentCount++; }
+    map.set(c.category, e);
+  }
+
+  const data = Array.from(map.entries())
+    .map(([category, v]) => ({
+      category,
+      total: v.total,
+      avg_sentiment: v.sentimentCount > 0 ? Math.round(v.sentimentSum / v.sentimentCount) : null,
+    }))
+    .sort((a, b) => b.total - a.total);
+
+  res.json({ success: true, data, session_count: sessions.length });
+});
+
 app.get('/api/history/stats', async (req, res) => {
   if (!supabase) return res.status(503).json({ success: false, error: 'DB not connected' });
   const [week, month] = await Promise.all([
