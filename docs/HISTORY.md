@@ -4,6 +4,32 @@
 
 ---
 
+## 2026-04-22
+
+### 중복 데이터 처리 강화
+
+#### DB insert 시 URL 중복 방지
+- `saveSessionToDb()` 내 `article_summaries` insert 전, DB에 이미 존재하는 URL 사전 조회
+- 이미 저장된 URL은 insert 생략 → 누적 중복 저장 원천 차단
+- 로그: `[Supabase] 중복 URL N개 insert 생략`
+
+#### 중복 세션 판단 임계값 강화
+- `isDuplicateSession()` URL overlap 임계값 70% → **85%**로 상향
+- 기존: 새 기사 5~6개만 있어도 새 세션으로 저장됨 → 중복 세션 과다 생성
+- 변경: 15% 이상 신규 URL이 있어야 새 세션으로 저장
+
+#### 기사 조회 중복 제거 방식 개선
+- `/api/history/articles` 엔드포인트 중복 제거 로직 변경
+- 기존: `title` 기준 Set 필터 (title이 바뀌면 동일 기사도 통과)
+- 변경: **URL 우선** → URL 없는 기사만 `title` 폴백으로 처리
+
+### `today` 기간 타임존 버그 수정
+- `getPeriodStart('today')`: `setHours(0,0,0,0)` → 서버 로컬타임(UTC) 자정 기준이었음
+- Supabase·Vercel 서버 UTC, 사용자 KST(+9) → 오전 9시 이전 수집 기사가 `오늘` 탭에서 누락되는 버그
+- 수정: KST 기준 자정(= UTC 전날 15:00)으로 계산하도록 변경
+
+---
+
 ## 2026-04-19 (4차)
 
 ### Analytics 카테고리별 비중 — 전체 DB 누적 기반으로 변경

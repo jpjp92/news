@@ -168,10 +168,26 @@ async function saveSessionToDb(
       sentiment_score: parseFloat(s.sentimentScore) || null,
     }));
 
+    // article_summaries: URL이 있는 기사는 DB에 이미 있는지 확인 후 삽입
+    let filteredArticleRows = articleRows;
+    if (articleRows.length) {
+      const urlsToCheck = articleRows.map((r: any) => r.url).filter(Boolean);
+      if (urlsToCheck.length) {
+        const { data: existing } = await supabase
+          .from('article_summaries')
+          .select('url')
+          .in('url', urlsToCheck);
+        const existingUrls = new Set((existing || []).map((e: any) => e.url));
+        filteredArticleRows = articleRows.filter((r: any) => !r.url || !existingUrls.has(r.url));
+        if (articleRows.length !== filteredArticleRows.length)
+          console.log(`[Supabase] 중복 URL ${articleRows.length - filteredArticleRows.length}개 insert 생략`);
+      }
+    }
+
     const inserts = [];
-    if (categoryRows.length) inserts.push(supabase.from('category_stats').insert(categoryRows));
-    if (keywordRows.length)  inserts.push(supabase.from('keyword_stats').insert(keywordRows));
-    if (articleRows.length)  inserts.push(supabase.from('article_summaries').insert(articleRows));
+    if (categoryRows.length)       inserts.push(supabase.from('category_stats').insert(categoryRows));
+    if (keywordRows.length)        inserts.push(supabase.from('keyword_stats').insert(keywordRows));
+    if (filteredArticleRows.length) inserts.push(supabase.from('article_summaries').insert(filteredArticleRows));
 
     const results = await Promise.all(inserts);
     results.forEach(({ error }) => {
@@ -205,7 +221,7 @@ async function isDuplicateSession(currentUrls: string[]): Promise<boolean> {
     const overlap = validUrls.filter(u => prevUrls.has(u)).length;
     const ratio = overlap / validUrls.length;
     console.log(`[Supabase] URL overlap with last session: ${Math.round(ratio * 100)}%`);
-    return ratio >= 0.7;
+    return ratio >= 0.85;
   } catch {
     return false;
   }
@@ -214,9 +230,11 @@ async function isDuplicateSession(currentUrls: string[]): Promise<boolean> {
 function getPeriodStart(period: string): string {
   const now = new Date();
   if (period === 'today') {
-    const start = new Date(now);
-    start.setHours(0, 0, 0, 0);
-    return start.toISOString();
+    // KST(UTC+9) 기준 자정으로 계산 — 오전 9시 이전 수집 기사도 포함
+    const KST_OFFSET = 9 * 60 * 60 * 1000;
+    const kstNow = new Date(now.getTime() + KST_OFFSET);
+    kstNow.setUTCHours(0, 0, 0, 0);
+    return new Date(kstNow.getTime() - KST_OFFSET).toISOString();
   }
   const days = period === '30d' ? 30 : 7;
   return new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
@@ -362,11 +380,17 @@ app.get('/api/history/articles', async (req, res) => {
 
   if (aErr) return res.status(500).json({ success: false, error: aErr.message });
 
-  // 제목 기준 중복 제거 (여러 세션에서 같은 기사 수집 가능)
-  const seen = new Set<string>();
+  // URL 우선, 없으면 title 기준 중복 제거 (여러 세션에서 같은 기사 수집 가능)
+  const seenUrls = new Set<string>();
+  const seenTitles = new Set<string>();
   const deduped = (articles || []).filter(a => {
-    if (seen.has(a.title)) return false;
-    seen.add(a.title);
+    if (a.url) {
+      if (seenUrls.has(a.url)) return false;
+      seenUrls.add(a.url);
+    } else {
+      if (seenTitles.has(a.title)) return false;
+      seenTitles.add(a.title);
+    }
     return true;
   });
 
