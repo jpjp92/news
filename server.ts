@@ -33,7 +33,10 @@ if (!supabase) {
   console.warn('[Supabase] SUPABASE_URL or SUPABASE_KEY missing — DB saving disabled.');
 }
 
-const GEMINI_MODELS = ['gemma-3-12b-it', 'gemma-3-27b-it'];
+const GEMINI_MODELS = (process.env.GEMINI_MODELS || 'gemini-2.5-flash,gemini-2.5-flash-lite')
+  .split(',')
+  .map(model => model.trim())
+  .filter(Boolean);
 let currentModelIndex = 0;
 
 // Limit to top 30 headlines for analysis (5 per category * 6 categories = 30)
@@ -557,7 +560,7 @@ app.get('/api/news-analysis', async (req, res) => {
     }
 
     // Limit to top 18 headlines for analysis (3 per category * 6 categories = 18)
-    // This reduction helps smaller models like gemma-3-4b-it complete the output without truncation.
+    // This reduction helps smaller models complete the output without truncation.
     const topHeadlines = headlines.slice(0, 18);
 
     if (topHeadlines.length === 0) {
@@ -639,7 +642,7 @@ app.get('/api/news-analysis', async (req, res) => {
     const isGemini = normalizedModel.includes('gemini');
     console.log(`[SERVER] Requesting analysis using model: ${currentModel} | JSON Mode: ${isGemini}`);
 
-    // 중복 체크와 Gemma 분석을 병렬 실행 (지연 없음)
+    // 중복 체크와 Gemini 분석을 병렬 실행 (지연 없음)
     const [isDuplicate, aiResponse] = await Promise.all([
       isDuplicateSession(topHeadlines.map(h => h.url)),
       ai.getGenerativeModel({

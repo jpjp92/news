@@ -121,12 +121,12 @@ export function Settings() {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-gray-800 dark:text-white">현재 사용 모델</p>
-            <p className="text-xs text-gray-500 dark:text-white/40 mt-0.5">서버에서 자동 로테이션 (gemma-3-12b ↔ 27b)</p>
+            <p className="text-xs text-gray-500 dark:text-white/40 mt-0.5">서버에서 자동 로테이션 (Gemini Flash ↔ Flash-Lite)</p>
           </div>
           <div className="flex items-center gap-2 bg-white/40 dark:bg-white/5 border border-white/50 dark:border-white/10 rounded-full px-3 py-1.5">
             <Cpu size={13} className="text-indigo-400" />
             <span className="text-xs font-medium text-gray-700 dark:text-white/70">
-              {modelUsed || 'gemma-3-*b-it'}
+              {modelUsed || 'gemini-2.5-flash'}
             </span>
           </div>
         </div>
