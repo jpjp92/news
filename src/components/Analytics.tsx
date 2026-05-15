@@ -179,12 +179,15 @@ export function Analytics() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[...(data?.keyTopics || [])].sort((a, b) => b.score - a.score).map((topic, idx) => (
-                  <div key={idx} className="p-4 rounded-xl border border-gray-100 dark:border-gray-800 bg-white/30 dark:bg-white/5 flex justify-between items-center">
-                    <div>
+                  <div key={idx} className="p-4 rounded-xl border border-gray-100 dark:border-gray-800 bg-white/30 dark:bg-white/5 flex justify-between items-start gap-3">
+                    <div className="min-w-0">
                       <h4 className="font-semibold text-gray-800 dark:text-gray-200">{topic.keyword}</h4>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
                         {topic.sentiment === 'positive' ? '긍정적' : topic.sentiment === 'negative' ? '부정적' : '중립적'}
                       </p>
+                      {topic.reason && (
+                        <p className="text-xs text-gray-500 dark:text-white/40 mt-2 line-clamp-2">{topic.reason}</p>
+                      )}
                     </div>
                     <div className={`text-lg font-bold ${
                       topic.sentiment === 'positive' ? 'text-emerald-500' :
@@ -221,6 +224,9 @@ export function Analytics() {
                               {cat.total}개 <span className="text-xs opacity-60">({Math.round(cat.total / grandTotal * 100)}%)</span>
                             </span>
                           </div>
+                          {cat.avg_sentiment !== null && (
+                            <p className="text-[10px] text-gray-400 dark:text-white/30 mb-1">평균 감성 {cat.avg_sentiment}</p>
+                          )}
                           <div className="w-full bg-gray-100 dark:bg-white/10 rounded-full h-2">
                             <div
                               className="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full transition-all duration-500"

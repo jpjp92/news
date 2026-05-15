@@ -149,14 +149,14 @@ export function Articles() {
       {/* 통합 필터 */}
       {!loading && rawArticles.length > 0 && (
         <GlassCard className="p-3">
-          <div className="flex items-center gap-2 mb-2.5">
-            <span className="text-[10px] font-bold text-gray-400 dark:text-white/30 uppercase tracking-wider w-10 flex-shrink-0">카테고리</span>
-            <div className="flex gap-1 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <div className="flex items-center gap-1.5 mb-2.5 min-w-0">
+            <span className="text-[10px] font-bold text-gray-400 dark:text-white/30 uppercase w-10 flex-shrink-0">카테고리</span>
+            <div className="flex gap-1 overflow-x-auto flex-1 min-w-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {categories.map(cat => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-2 py-1 rounded-md text-[11px] font-medium whitespace-nowrap transition-all ${
+                  className={`px-1.5 py-0.5 rounded-md text-[10px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
                     selectedCategory === cat
                       ? 'bg-indigo-500 text-white shadow-sm'
                       : 'text-gray-500 dark:text-white/50 hover:bg-white/50 dark:hover:bg-white/5 hover:text-gray-700 dark:hover:text-white/80'
@@ -168,8 +168,8 @@ export function Articles() {
             </div>
           </div>
           <div className="border-t border-black/5 dark:border-white/10 mb-2.5" />
-          <div className="flex items-center gap-1.5">
-            <span className="text-[10px] font-bold text-gray-400 dark:text-white/30 uppercase tracking-wider w-10 flex-shrink-0">감성</span>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="text-[10px] font-bold text-gray-400 dark:text-white/30 uppercase w-10 flex-shrink-0">감성</span>
             <div className="flex gap-1 flex-1">
               {[
                 { id: 'all',      label: '전체', icon: <Activity size={11} />, active: 'bg-indigo-500' },
@@ -180,7 +180,7 @@ export function Articles() {
                 <button
                   key={f.id}
                   onClick={() => setSentimentFilter(f.id)}
-                  className={`flex items-center gap-0.5 px-2 py-1 rounded-md text-[11px] font-medium transition-all whitespace-nowrap ${
+                  className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-medium transition-all whitespace-nowrap flex-shrink-0 ${
                     sentimentFilter === f.id
                       ? `${f.active} text-white shadow-sm`
                       : 'text-gray-500 dark:text-white/50 hover:bg-white/50 dark:hover:bg-white/5 hover:text-gray-700 dark:hover:text-white/80'
@@ -221,11 +221,11 @@ export function Articles() {
           {filteredArticles.map((article, idx) => (
             <GlassCard key={idx} className="p-5 flex flex-col hover:shadow-lg dark:hover:shadow-indigo-500/10 transition-shadow duration-300">
               <div className="flex justify-between items-start mb-3">
-                <span className="px-2.5 py-1 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-semibold">
+                <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-full text-[10px] font-semibold whitespace-nowrap truncate max-w-[7rem]">
                   {article.category}
                 </span>
                 {article.sentiment && (
-                  <span className={`text-xs font-medium ${sentimentColor(article.sentiment)}`}>
+                  <span className={`text-[11px] font-medium ${sentimentColor(article.sentiment)}`}>
                     {article.sentiment === 'positive' ? '↑ 긍정' : article.sentiment === 'negative' ? '↓ 부정' : '— 중립'}
                   </span>
                 )}

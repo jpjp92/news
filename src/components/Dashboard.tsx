@@ -19,6 +19,10 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
   const { data, modelUsed, collectedAt, loading, error, fetchData, searchQuery } = useNews();
   const [showAllSummaries, setShowAllSummaries] = useState(false);
   const [periodStats, setPeriodStats] = useState<{ week: PeriodStats; month: PeriodStats } | null>(null);
+  const periodCardStyles = {
+    indigo: 'bg-indigo-100/50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400',
+    purple: 'bg-purple-100/50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400',
+  };
 
   useEffect(() => {
     fetch('/api/history/stats')
@@ -44,14 +48,14 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
     : filteredSummaries.slice(0, 5);
 
   const sentimentStats = useMemo(() => {
-    const topics = data?.keyTopics || [];
-    if (!topics.length) return { posPct: 0, negPct: 0 };
-    const pos = topics.filter(t => t.sentiment === 'positive').length;
-    const neg = topics.filter(t => t.sentiment === 'negative').length;
-    const posPct = Math.round((pos / topics.length) * 100);
-    const negPct = Math.round((neg / topics.length) * 100);
+    const summaries = data?.summaries || [];
+    if (!summaries.length) return { posPct: 0, negPct: 0 };
+    const pos = summaries.filter(t => t.sentiment === 'positive').length;
+    const neg = summaries.filter(t => t.sentiment === 'negative').length;
+    const posPct = Math.round((pos / summaries.length) * 100);
+    const negPct = Math.round((neg / summaries.length) * 100);
     return { posPct, negPct };
-  }, [data?.keyTopics]);
+  }, [data?.summaries]);
 
   const chartData = useMemo(() => {
     if (!data || !data.categories) return [];
@@ -123,7 +127,7 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
             <TrendingUp size={20} className="md:w-6 md:h-6" />
           </div>
           <div className="min-w-0">
-            <p className="text-[10px] md:text-xs font-medium text-gray-500 dark:text-white/60 truncate">긍정 비율</p>
+            <p className="text-[10px] md:text-xs font-medium text-gray-500 dark:text-white/60 truncate">기사 긍정 비율</p>
             <h3 className="text-xl md:text-3xl font-bold text-emerald-600 dark:text-emerald-400">
               {loading ? '..' : `${sentimentStats.posPct}%`}
             </h3>
@@ -135,7 +139,7 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
             <TrendingDown size={20} className="md:w-6 md:h-6" />
           </div>
           <div className="min-w-0">
-            <p className="text-[10px] md:text-xs font-medium text-gray-500 dark:text-white/60 truncate">부정 비율</p>
+            <p className="text-[10px] md:text-xs font-medium text-gray-500 dark:text-white/60 truncate">기사 부정 비율</p>
             <h3 className="text-xl md:text-3xl font-bold text-rose-500 dark:text-rose-400">
               {loading ? '..' : `${sentimentStats.negPct}%`}
             </h3>
@@ -159,11 +163,11 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
       {periodStats && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
           {[
-            { label: '주간 통계', sublabel: '최근 7일', icon: <CalendarDays size={16} />, stats: periodStats.week, color: 'indigo' },
-            { label: '월간 통계', sublabel: '최근 30일', icon: <BarChart3 size={16} />, stats: periodStats.month, color: 'purple' },
+            { label: '주간 통계', sublabel: '최근 7일', icon: <CalendarDays size={16} />, stats: periodStats.week, color: 'indigo' as const },
+            { label: '월간 통계', sublabel: '최근 30일', icon: <BarChart3 size={16} />, stats: periodStats.month, color: 'purple' as const },
           ].map(({ label, sublabel, icon, stats, color }) => (
             <GlassCard key={label} className="p-4 flex items-center gap-4">
-              <div className={`p-2.5 bg-${color}-100/50 dark:bg-${color}-900/30 rounded-xl text-${color}-600 dark:text-${color}-400 flex-shrink-0`}>
+              <div className={`p-2.5 rounded-xl flex-shrink-0 ${periodCardStyles[color]}`}>
                 {icon}
               </div>
               <div className="flex-1 min-w-0">
@@ -203,7 +207,15 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <GlassCard className="h-80 overflow-hidden">
-            <TrendChart data={chartData} transparent hideHeader={false} />
+            <TrendChart
+              data={chartData}
+              transparent
+              hideHeader={false}
+              title="카테고리별 기사 수 및 감성"
+              subtitle="현재 세션 기준 카테고리별 기사 수와 평균 감성 점수"
+              articlesLabel="기사 수"
+              sentimentLabel="평균 감성"
+            />
           </GlassCard>
           
           <GlassCard className="p-6 overflow-hidden border-indigo-200/30 dark:border-indigo-500/20 relative">
@@ -226,6 +238,18 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
                 <p className="text-gray-700 dark:text-slate-200 leading-relaxed font-medium pl-2 italic">
                   "{data?.overallTrend || "현재 분석된 주요 뉴스 트렌드가 없습니다."}"
                 </p>
+                {!!data?.trendDrivers?.length && (
+                  <div className="flex flex-wrap gap-1.5 mt-4 pl-2">
+                    {data.trendDrivers.slice(0, 5).map(driver => (
+                      <span
+                        key={driver}
+                        className="px-2 py-1 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 text-xs font-medium border border-indigo-100 dark:border-indigo-500/20"
+                      >
+                        #{driver}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-3 text-right">
                   *AI 분석 결과로 실제 사실과 다를 수 있습니다.
                 </p>
@@ -307,9 +331,14 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
                 </div>
               ) : (
                 data?.categories?.map((cat, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-white/20 dark:bg-white/5 border border-white/30 dark:border-white/10">
-                    <span className="font-medium text-gray-700 dark:text-slate-300">{cat.name}</span>
-                    <span className="font-bold text-indigo-600 dark:text-indigo-400">{cat.count}개</span>
+                  <div key={idx} className="p-3 rounded-xl bg-white/20 dark:bg-white/5 border border-white/30 dark:border-white/10">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="font-medium text-gray-700 dark:text-slate-300">{cat.name}</span>
+                      <span className="font-bold text-indigo-600 dark:text-indigo-400 flex-shrink-0">{cat.count}개</span>
+                    </div>
+                    {cat.dominantIssue && (
+                      <p className="text-xs text-gray-500 dark:text-white/40 mt-1 line-clamp-2">{cat.dominantIssue}</p>
+                    )}
                   </div>
                 ))
               )}

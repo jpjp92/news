@@ -116,6 +116,44 @@ function extractAndFixJson(text: string): any {
   }
 }
 
+function normalizeAnalysis(analysis: any) {
+  const validSentiments = ['positive', 'neutral', 'negative'];
+  const categories = Array.isArray(analysis.categories) ? analysis.categories : [];
+  const keyTopics = Array.isArray(analysis.keyTopics) ? analysis.keyTopics : [];
+  const summaries = Array.isArray(analysis.summaries) ? analysis.summaries : [];
+  const trendDrivers = Array.isArray(analysis.trendDrivers) ? analysis.trendDrivers : [];
+
+  return {
+    overallTrend: typeof analysis.overallTrend === 'string' ? analysis.overallTrend : '',
+    trendDrivers: trendDrivers
+      .map((v: any) => String(v || '').trim())
+      .filter(Boolean)
+      .slice(0, 5),
+    categories: categories.map((c: any) => ({
+      name: String(c.name || 'Unknown').trim(),
+      count: Number(c.count) || 0,
+      averageSentiment: Number(c.averageSentiment) || 50,
+      dominantIssue: String(c.dominantIssue || '').trim(),
+    })),
+    keyTopics: keyTopics
+      .map((k: any) => ({
+        keyword: String(k.keyword || '').trim(),
+        sentiment: validSentiments.includes(k.sentiment) ? k.sentiment : 'neutral',
+        score: Number(k.score) || 0,
+        reason: String(k.reason || '').trim(),
+      }))
+      .filter((k: any) => k.keyword),
+    summaries: summaries.map((s: any) => ({
+      title: String(s.title || '').trim(),
+      summary: String(s.summary || '').trim(),
+      category: String(s.category || '기타').trim(),
+      url: s.url ? String(s.url).trim() : undefined,
+      sentiment: validSentiments.includes(s.sentiment) ? s.sentiment : 'neutral',
+      sentimentScore: Number(s.sentimentScore) || 50,
+    })),
+  };
+}
+
 async function saveSessionToDb(
   analysis: any,
   modelUsed: string,
@@ -475,7 +513,7 @@ app.get('/api/history/latest-session', async (req, res) => {
 
   const { data: session, error: sErr } = await supabase
     .from('news_sessions')
-    .select('id, overall_trend, model_used, collected_at')
+    .select('id, overall_trend, model_used, collected_at, raw_data')
     .eq('is_error', false)
     .order('collected_at', { ascending: false })
     .limit(1)
@@ -489,14 +527,37 @@ app.get('/api/history/latest-session', async (req, res) => {
     supabase.from('article_summaries').select('title, summary, category, url, sentiment, sentiment_score').eq('session_id', session.id),
   ]);
 
+  const rawAnalysis = (session as any).raw_data?.data || {};
+
   res.json({
     success: true,
     modelUsed: session.model_used,
     collectedAt: session.collected_at,
     data: {
       overallTrend: session.overall_trend || '',
-      categories: (cats || []).map(c => ({ name: c.category, count: c.count, averageSentiment: c.avg_sentiment })),
-      keyTopics: (keywords || []).map(k => ({ keyword: k.keyword, score: k.score, sentiment: k.sentiment || 'neutral' })),
+      trendDrivers: Array.isArray(rawAnalysis.trendDrivers) ? rawAnalysis.trendDrivers : [],
+      categories: (cats || []).map(c => {
+        const rawCategory = Array.isArray(rawAnalysis.categories)
+          ? rawAnalysis.categories.find((item: any) => item.name === c.category)
+          : null;
+        return {
+          name: c.category,
+          count: c.count,
+          averageSentiment: c.avg_sentiment,
+          dominantIssue: rawCategory?.dominantIssue || '',
+        };
+      }),
+      keyTopics: (keywords || []).map(k => {
+        const rawTopic = Array.isArray(rawAnalysis.keyTopics)
+          ? rawAnalysis.keyTopics.find((item: any) => item.keyword === k.keyword)
+          : null;
+        return {
+          keyword: k.keyword,
+          score: k.score,
+          sentiment: k.sentiment || 'neutral',
+          reason: rawTopic?.reason || '',
+        };
+      }),
       summaries: (articles || []).map(a => ({ title: a.title, summary: a.summary, category: a.category, url: a.url, sentiment: a.sentiment, sentimentScore: a.sentiment_score })),
     },
   });
@@ -568,6 +629,7 @@ app.get('/api/news-analysis', async (req, res) => {
         success: true, 
         data: {
           overallTrend: "현재 수집된 뉴스가 없습니다. 잠시 후 다시 시도해주세요.",
+          trendDrivers: [],
           categories: [],
           keyTopics: [],
           summaries: []
@@ -599,29 +661,33 @@ app.get('/api/news-analysis', async (req, res) => {
     4. Provide the result as ONE compact JSON object.
     
     IMPORTANT: Keep the "summary" field extremely brief (under 50 characters).
+    If needed, summaries may be up to 80 Korean characters, but never more.
     The "overallTrend" should be a comprehensive summary of 2-3 sentences.
     
     Structure:
     {
       "overallTrend": "현재 수집된 뉴스들의 핵심 이슈와 전반적인 흐름을 한국어 2-3문장으로 집약적으로 요약.",
+      "trendDrivers": ["전체 흐름을 만든 핵심 근거 키워드 1", "핵심 근거 키워드 2", "핵심 근거 키워드 3"],
       "categories": [
         { 
           "name": "카테고리명 (정치, 경제, 사회, 생활/문화, IT/과학, 세계)", 
           "count": 1,
-          "averageSentiment": "1-100 사이의 평균 감정 점수"
+          "averageSentiment": "1-100 사이의 평균 감정 점수",
+          "dominantIssue": "이 카테고리에서 가장 두드러진 이슈를 한국어 1문장으로 설명"
         }
       ],
       "keyTopics": [
         { 
           "keyword": "핵심 키워드 (한국어)", 
           "sentiment": "positive/negative/neutral", 
-          "score": "1-100 사이의 점수 (해당 키워드의 화제성 또는 강도)" 
+          "score": "1-100 사이의 점수 (해당 키워드의 화제성 또는 강도)",
+          "reason": "이 키워드가 중요한 이유를 한국어 1문장으로 설명"
         }
       ],
       "summaries": [
         { 
           "title": "원본 헤드라인", 
-          "summary": "한국어 1줄 요약(50자 이내)", 
+          "summary": "한국어 1줄 요약(80자 이내)", 
           "category": "카테고리명", 
           "url": "원본 URL",
           "sentiment": "positive/negative/neutral",
@@ -666,15 +732,13 @@ app.get('/api/news-analysis', async (req, res) => {
 
       analysis = {
         overallTrend: `[${currentModel} 응답 처리 실패 — 잠시 후 다시 시도해주세요]`,
+        trendDrivers: [],
         categories: [],
         keyTopics: [],
         summaries: []
       };
     } else {
-      if (!Array.isArray(analysis.summaries)) analysis.summaries = [];
-      if (!Array.isArray(analysis.categories)) analysis.categories = [];
-      if (!Array.isArray(analysis.keyTopics)) analysis.keyTopics = [];
-      analysis.overallTrend = analysis.overallTrend || "";
+      analysis = normalizeAnalysis(analysis);
 
       if (isDuplicate) {
         console.log('[Supabase] 중복 세션 감지 — DB 저장 생략');
