@@ -4,6 +4,7 @@ import { FileText, ExternalLink, RefreshCw, AlertCircle, Smile, Meh, Frown, Acti
 import { useNews } from '../context/NewsContext';
 
 type Period = 'session' | 'today' | '7d' | '30d';
+type SortOrder = 'newest' | 'oldest';
 
 interface DbArticle {
   id: string;
@@ -14,6 +15,8 @@ interface DbArticle {
   url: string;
   sentiment: string;
   sentiment_score: number;
+  collected_at?: string | null;
+  order_index?: number;
 }
 
 const PERIOD_LABELS: Record<Period, string> = {
@@ -33,6 +36,7 @@ export function Articles() {
   const [sessionCount, setSessionCount] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState<string>('전체');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
 
   // DB 기사 로딩
   useEffect(() => {
@@ -83,8 +87,16 @@ export function Articles() {
         a.category?.toLowerCase().includes(q)
       );
     }
-    return list;
-  }, [rawArticles, selectedCategory, sentimentFilter, searchQuery]);
+    return [...list].sort((a, b) => {
+      const aTime = new Date(a.collected_at || a.created_at || 0).getTime();
+      const bTime = new Date(b.collected_at || b.created_at || 0).getTime();
+      const aOrder = Number(a.order_index ?? rawArticles.indexOf(a));
+      const bOrder = Number(b.order_index ?? rawArticles.indexOf(b));
+      const newestCompare = bTime - aTime || aOrder - bOrder;
+      const oldestCompare = aTime - bTime || bOrder - aOrder;
+      return sortOrder === 'newest' ? newestCompare : oldestCompare;
+    });
+  }, [rawArticles, selectedCategory, sentimentFilter, searchQuery, sortOrder]);
 
   const highlightText = (text: string, query: string) => {
     if (!query.trim()) return text;
@@ -191,6 +203,28 @@ export function Articles() {
               ))}
             </div>
             <span className="flex-shrink-0 text-[11px] text-gray-400 dark:text-white/30">{filteredArticles.length}개</span>
+          </div>
+          <div className="border-t border-black/5 dark:border-white/10 my-2.5" />
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="text-[10px] font-bold text-gray-400 dark:text-white/30 uppercase w-10 flex-shrink-0">정렬</span>
+            <div className="flex gap-1 flex-1 min-w-0">
+              {[
+                { id: 'newest' as const, label: '최신순' },
+                { id: 'oldest' as const, label: '오래된순' },
+              ].map(option => (
+                <button
+                  key={option.id}
+                  onClick={() => setSortOrder(option.id)}
+                  className={`px-1.5 py-0.5 rounded-md text-[10px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
+                    sortOrder === option.id
+                      ? 'bg-indigo-500 text-white shadow-sm'
+                      : 'text-gray-500 dark:text-white/50 hover:bg-white/50 dark:hover:bg-white/5 hover:text-gray-700 dark:hover:text-white/80'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           </div>
         </GlassCard>
       )}

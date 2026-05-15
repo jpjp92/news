@@ -289,6 +289,8 @@ app.get('/api/history/sessions', async (req, res) => {
   const { data, error } = await supabase
     .from('news_sessions')
     .select('id, collected_at, article_count, model_used, is_error, overall_trend')
+    .eq('is_error', false)
+    .gt('article_count', 0)
     .gte('collected_at', getPeriodStart(period))
     .order('collected_at', { ascending: false });
 
@@ -422,18 +424,25 @@ app.get('/api/history/articles', async (req, res) => {
   if (aErr) return res.status(500).json({ success: false, error: aErr.message });
 
   // URL 우선, 없으면 title 기준 중복 제거 (여러 세션에서 같은 기사 수집 가능)
+  const sessionDateMap = new Map((sessions || []).map(s => [s.id, s.collected_at]));
   const seenUrls = new Set<string>();
   const seenTitles = new Set<string>();
-  const deduped = (articles || []).filter(a => {
-    if (a.url) {
-      if (seenUrls.has(a.url)) return false;
-      seenUrls.add(a.url);
-    } else {
-      if (seenTitles.has(a.title)) return false;
-      seenTitles.add(a.title);
-    }
-    return true;
-  });
+  const deduped = (articles || [])
+    .map((a, index) => ({ ...a, collected_at: sessionDateMap.get(a.session_id) || null, order_index: index }))
+    .sort((a, b) => {
+      const dateCompare = String(b.collected_at || '').localeCompare(String(a.collected_at || ''));
+      return dateCompare !== 0 ? dateCompare : a.order_index - b.order_index;
+    })
+    .filter(a => {
+      if (a.url) {
+        if (seenUrls.has(a.url)) return false;
+        seenUrls.add(a.url);
+      } else {
+        if (seenTitles.has(a.title)) return false;
+        seenTitles.add(a.title);
+      }
+      return true;
+    });
 
   res.json({ success: true, data: deduped, total: deduped.length, session_count: sessions.length });
 });

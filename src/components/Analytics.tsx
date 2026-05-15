@@ -11,7 +11,6 @@ interface Session {
   collected_at: string;
   article_count: number;
   model_used: string;
-  is_error: boolean;
   overall_trend: string;
 }
 
@@ -88,7 +87,7 @@ export function Analytics() {
       fetch(`/api/history/sentiment?period=${period}`).then(r => r.json()),
     ])
       .then(([s, k, t]) => {
-        setSessions(s.success ? s.data : []);
+        setSessions(s.success ? (s.data || []).filter((session: Session) => Number(session.article_count) > 0) : []);
         setKeywords(k.success ? k.data : []);
         setSentimentTrend(t.success ? t.data : []);
         if (!s.success) setHistError(s.error || '데이터 로드 실패');
@@ -110,6 +109,11 @@ export function Analytics() {
       articles: d.session_count,
       sentiment: d.positive_pct,
     })), [sentimentTrend]);
+
+  const visibleSentimentTrend = useMemo(() =>
+    sentimentTrend.filter(d =>
+      d.session_count > 0 && (d.positive_pct + d.negative_pct + d.neutral_pct) > 0
+    ), [sentimentTrend]);
 
   const isHistorical = period !== 'current';
 
@@ -308,17 +312,13 @@ export function Analytics() {
               </div>
               <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                 {sessions.map((s, idx) => (
-                  <div key={s.id} className={`flex items-center gap-3 p-3 rounded-xl text-sm ${
-                    s.is_error
-                      ? 'bg-rose-50/50 dark:bg-rose-900/10 border border-rose-200/50 dark:border-rose-500/20'
-                      : 'bg-white/20 dark:bg-white/5 border border-white/30 dark:border-white/10'
-                  }`}>
+                  <div key={s.id} className="flex items-center gap-3 p-3 rounded-xl text-sm bg-white/20 dark:bg-white/5 border border-white/30 dark:border-white/10">
                     <span className="text-xs text-gray-400 dark:text-white/30 font-mono w-5 flex-shrink-0">
                       {String(idx + 1).padStart(2, '0')}
                     </span>
                     <span className="text-gray-500 dark:text-white/40 flex-shrink-0 w-28">{formatDate(s.collected_at)}</span>
-                    <span className={`flex-shrink-0 w-1.5 h-1.5 rounded-full ${s.is_error ? 'bg-rose-400' : 'bg-emerald-400'}`} />
-                    <span className="text-gray-700 dark:text-white/70 flex-1 line-clamp-1">{s.is_error ? '파싱 오류' : s.overall_trend}</span>
+                    <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    <span className="text-gray-700 dark:text-white/70 flex-1 line-clamp-1">{s.overall_trend}</span>
                     <span className="text-xs text-gray-400 dark:text-white/30 flex-shrink-0">{s.article_count}개</span>
                     <span className="text-[10px] text-indigo-400/70 flex-shrink-0 hidden sm:block">{s.model_used?.replace('gemini-2.5-', 'g2.5-')}</span>
                   </div>
@@ -374,10 +374,10 @@ export function Analytics() {
                     <p className="text-xs text-gray-500 dark:text-white/40">긍정 키워드 비율 기준</p>
                   </div>
                 </div>
-                {sentimentTrend.length > 0 ? (
+                {visibleSentimentTrend.length > 0 ? (
                   <>
-                    <div className="space-y-3 mb-4">
-                      {sentimentTrend.map(d => (
+                    <div className="space-y-3 mb-4 max-h-72 overflow-y-auto pr-1">
+                      {visibleSentimentTrend.map(d => (
                         <div key={d.date}>
                           <div className="flex justify-between text-xs mb-1">
                             <span className="text-gray-500 dark:text-white/50">{formatDay(d.date)}</span>
