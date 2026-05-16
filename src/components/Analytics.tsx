@@ -326,6 +326,22 @@ export function Analytics() {
               </div>
             </GlassCard>
 
+            {/* 트렌드 오버뷰 */}
+            <GlassCard className="p-6 flex flex-col">
+              <div className="flex items-center gap-3 mb-4 shrink-0">
+                <div className="p-2.5 bg-pink-100/50 dark:bg-pink-900/30 rounded-xl text-pink-600 dark:text-pink-400">
+                  <Activity size={20} />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-800 dark:text-white">트렌드 오버뷰</h2>
+                  <p className="text-xs text-gray-500 dark:text-white/40">기간 내 수집 세션 수 · 긍정 비율</p>
+                </div>
+              </div>
+              <div className="flex-1 -mx-6 -mb-6 min-h-[220px]">
+                <TrendChart data={sentimentChartData.length > 0 ? sentimentChartData : undefined} transparent hideHeader className="!p-6" />
+              </div>
+            </GlassCard>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* 키워드 반복 순위 */}
               <GlassCard className="p-6">
