@@ -4,6 +4,38 @@
 
 ---
 
+## 2026-05-24
+
+### Next.js App Router 마이그레이션
+- Vite + Express 구조를 Next.js 15 App Router + Route Handler 구조로 전환
+- 프론트 진입점: `app/page.tsx` / `app/layout.tsx`
+- 서버 비즈니스 로직: `src/lib/server/newsService.ts` 로 분리
+- Vercel 배포 설정을 `framework=nextjs` 로 단순화
+
+### 초기 진입 UX 개선
+- 대시보드 첫 진입 시 최신 세션이 없으면 자동으로 분석 1회 실행
+- `NewsContext` 에서 최신 세션 조회 실패 시 수동 새로고침 없이 바로 데이터 생성
+- 빈 상태 카드와 즉시 분석 버튼 추가
+
+### 최신 뉴스 페이지 개선
+- 기사 목록을 30개 단위로 페이지네이션
+- 검색 / 감성 / 카테고리 / 정렬 조건이 바뀌면 페이지를 1로 초기화
+- 오늘 DB 데이터가 없으면 현재 세션 결과로 자동 폴백
+
+### 개발 서버 안정화
+- `npm run dev` 실행 시 3000 포트를 고정 사용하도록 변경
+- 3000 포트가 이미 사용 중이면 조용히 3001로 넘어가지 않고 즉시 실패
+- dev 로그와 API 로그를 `logs/news_dash.log` 에 남기도록 추가
+
+### 로그 체계화
+- `src/lib/server/logger.ts` 에 서버 전용 로거 추가
+- API Route 에서 요청/응답 실패 로그를 구조화해서 기록
+- Next `instrumentation.ts` 는 console-only 로 유지하여 dev 시작 오류를 방지
+
+### 검증
+- `npm run lint` 통과
+- `npm run build` 통과
+
 ## 2026-04-22
 
 ### 중복 데이터 처리 강화

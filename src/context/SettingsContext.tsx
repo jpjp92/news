@@ -24,6 +24,7 @@ interface SettingsContextType {
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 function loadFromStorage(): AppSettings {
+  if (typeof window === 'undefined') return DEFAULT_SETTINGS;
   try {
     const raw = localStorage.getItem('appSettings');
     if (!raw) return DEFAULT_SETTINGS;

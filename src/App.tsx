@@ -16,7 +16,9 @@ import { SettingsProvider } from './context/SettingsContext';
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 768);
+  const [sidebarOpen, setSidebarOpen] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth >= 768 : true,
+  );
   const { theme } = useTheme();
 
   return (

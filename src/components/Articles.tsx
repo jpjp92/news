@@ -37,6 +37,8 @@ export function Articles() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState<string>('전체');
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 30;
 
   // DB 기사 로딩
   useEffect(() => {
@@ -66,9 +68,12 @@ export function Articles() {
   };
 
   const isDbMode = period !== 'session';
+  const useCurrentSessionFallback = period === 'today' && !dbLoading && !dbError && dbArticles.length === 0 && (data?.summaries?.length || 0) > 0;
   const loading = isDbMode ? dbLoading : sessionLoading;
   const error = isDbMode ? dbError : sessionError;
-  const rawArticles: any[] = isDbMode ? dbArticles : (data?.summaries || []);
+  const rawArticles: any[] = isDbMode
+    ? (useCurrentSessionFallback ? (data?.summaries || []) : dbArticles)
+    : (data?.summaries || []);
 
   const categories = useMemo(() => {
     const cats = new Set(rawArticles.map(a => a.category).filter(Boolean));
@@ -98,6 +103,19 @@ export function Articles() {
     });
   }, [rawArticles, selectedCategory, sentimentFilter, searchQuery, sortOrder]);
 
+  const totalPages = Math.max(1, Math.ceil(filteredArticles.length / pageSize));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const startIndex = (safeCurrentPage - 1) * pageSize;
+  const visibleArticles = filteredArticles.slice(startIndex, startIndex + pageSize);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [period, selectedCategory, sentimentFilter, searchQuery, sortOrder, useCurrentSessionFallback]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
   const highlightText = (text: string, query: string) => {
     if (!query.trim()) return text;
     const parts = text.split(new RegExp(`(${query})`, 'gi'));
@@ -119,7 +137,9 @@ export function Articles() {
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">최신 뉴스 기사</h1>
           <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
             {isDbMode
-              ? <><Database size={12} className="inline mr-1" />{sessionCount}개 세션 수집 · 총 {rawArticles.length}개 기사 (중복 제거)</>
+              ? useCurrentSessionFallback
+                ? <><Database size={12} className="inline mr-1" />오늘 DB 기사 없음 · 현재 세션 {rawArticles.length}개 기사 표시</>
+                : <><Database size={12} className="inline mr-1" />{sessionCount}개 세션 수집 · 총 {rawArticles.length}개 기사 (중복 제거)</>
               : '현재 세션 실시간 분석 결과'}
           </p>
         </div>
@@ -159,6 +179,12 @@ export function Articles() {
       )}
 
       {/* 통합 필터 */}
+      {useCurrentSessionFallback && (
+        <GlassCard className="p-4 border-amber-200/60 dark:border-amber-500/20 bg-amber-50/40 dark:bg-amber-900/10 text-amber-800 dark:text-amber-200">
+          <p className="text-sm font-medium">오늘 수집된 DB 데이터가 없어 현재 세션 결과를 대신 보여주고 있습니다.</p>
+        </GlassCard>
+      )}
+
       {!loading && rawArticles.length > 0 && (
         <GlassCard className="p-3">
           <div className="flex items-center gap-1.5 mb-2.5 min-w-0">
@@ -202,7 +228,9 @@ export function Articles() {
                 </button>
               ))}
             </div>
-            <span className="flex-shrink-0 text-[11px] text-gray-400 dark:text-white/30">{filteredArticles.length}개</span>
+            <span className="flex-shrink-0 text-[11px] text-gray-400 dark:text-white/30">
+              {filteredArticles.length}개 / {safeCurrentPage}페이지
+            </span>
           </div>
           <div className="border-t border-black/5 dark:border-white/10 my-2.5" />
           <div className="flex items-center gap-1.5 min-w-0">
@@ -251,8 +279,20 @@ export function Articles() {
           </p>
         </GlassCard>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredArticles.map((article, idx) => (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-3 text-xs text-gray-400 dark:text-white/30">
+            <span>
+              {startIndex + 1}-{Math.min(startIndex + pageSize, filteredArticles.length)} / {filteredArticles.length}개 표시
+            </span>
+            {filteredArticles.length > pageSize && (
+              <span>
+                30개씩 페이지 단위로 보여줍니다
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {visibleArticles.map((article, idx) => (
             <GlassCard key={idx} className="p-5 flex flex-col hover:shadow-lg dark:hover:shadow-indigo-500/10 transition-shadow duration-300">
               <div className="flex justify-between items-start mb-3">
                 <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-full text-[10px] font-semibold whitespace-nowrap truncate max-w-[7rem]">
@@ -282,6 +322,29 @@ export function Articles() {
               </div>
             </GlassCard>
           ))}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <button
+                onClick={() => setCurrentPage(page => Math.max(1, page - 1))}
+                disabled={safeCurrentPage === 1}
+                className="px-3 py-2 rounded-lg text-sm font-medium bg-white/40 dark:bg-white/5 border border-white/50 dark:border-white/10 text-gray-600 dark:text-white/70 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white/60 dark:hover:bg-white/10"
+              >
+                이전
+              </button>
+              <span className="text-sm text-gray-500 dark:text-white/40 min-w-[6rem] text-center">
+                {safeCurrentPage} / {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage(page => Math.min(totalPages, page + 1))}
+                disabled={safeCurrentPage === totalPages}
+                className="px-3 py-2 rounded-lg text-sm font-medium bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                다음
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

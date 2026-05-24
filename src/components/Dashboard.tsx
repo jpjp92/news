@@ -66,6 +66,8 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
     }));
   }, [data]);
 
+  const isEmptyState = !loading && !error && (!data || (data.summaries?.length || 0) === 0);
+
   return (
     <div className="p-4 space-y-6 pb-10 w-full overflow-x-hidden">
       <div className="flex justify-between items-end">
@@ -105,6 +107,26 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
               error
             )}
           </p>
+        </GlassCard>
+      )}
+
+      {isEmptyState && (
+        <GlassCard className="p-5 md:p-6 border-amber-200/60 dark:border-amber-500/20 bg-amber-50/40 dark:bg-amber-900/10">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="font-semibold text-amber-800 dark:text-amber-300">표시할 분석 데이터가 아직 없습니다</p>
+              <p className="text-sm text-amber-700/80 dark:text-amber-200/70 mt-1">
+                처음 접속했거나 저장된 세션이 없을 수 있습니다. 지금 바로 수집/분석을 실행해보세요.
+              </p>
+            </div>
+            <button
+              onClick={fetchData}
+              disabled={loading}
+              className="px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50"
+            >
+              지금 분석 시작
+            </button>
+          </div>
         </GlassCard>
       )}
 
