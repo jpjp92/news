@@ -1,54 +1,55 @@
-# news_dash - Next.js 기반 AI 뉴스 트렌드 대시보드
+# news_dash
 
-네이버 뉴스를 수집하고 Gemini로 트렌드/감성 분석을 수행하는 대시보드입니다.
-프론트와 백엔드를 Next.js(App Router + Route Handler)로 통합해 운영 구조를 단순화했습니다.
+Next.js 기반 AI 뉴스 트렌드 대시보드입니다. 네이버 뉴스 섹션별 헤드라인을 수집하고 Gemini로 트렌드, 키워드, 감성, 기사 요약을 분석한 뒤 Supabase에 세션 이력으로 저장합니다.
 
-## 핵심 구조
+## 주요 기능
 
-- 프레임워크: Next.js 15
-- UI: React 19 + Tailwind CSS v4
-- 차트: Recharts
-- AI 분석: @google/generative-ai
-- 데이터 저장: Supabase
+- 네이버 뉴스 6개 섹션 수집: 정치, 경제, 사회, 생활/문화, 세계, IT/과학
+- Gemini 기반 분석: 전체 트렌드, 주요 키워드, 카테고리별 이슈, 기사별 요약/감성
+- 최신 세션 자동 로드: 저장된 최신 정상 세션을 먼저 보여주고, 없으면 1회 자동 분석
+- 히스토리 분석: 오늘, 7일, 30일 기준 세션/키워드/감성/기사 조회
+- Supabase 저장: 세션, 카테고리 통계, 키워드 통계, 기사 요약 분리 저장
+- 반응형 UI: 대시보드, 핵심 분석, 최신뉴스, 설정 화면 제공
 
-## 디렉토리 구조
+## 기술 스택
+
+- Framework: Next.js 15 App Router
+- UI: React 19, Tailwind CSS v4, motion
+- Chart: Recharts
+- AI: `@google/generative-ai`
+- Crawling: cheerio
+- Database: Supabase
+- Language: TypeScript
+
+## 프로젝트 구조
 
 ```text
 app/
-  page.tsx                         # 클라이언트 대시보드 진입
+  page.tsx                         # 클라이언트 대시보드 진입점
   layout.tsx                       # 루트 레이아웃
-  globals.css                      # 전역 스타일 + Tailwind
+  globals.css                      # 전역 스타일 및 Tailwind
   api/
-    news-analysis/route.ts         # 뉴스 수집 + AI 분석
+    news-analysis/route.ts         # 뉴스 수집 + AI 분석 실행
     history/
-      sessions/route.ts
-      keywords/route.ts
-      sentiment/route.ts
-      articles/route.ts
-      category-totals/route.ts
-      stats/route.ts
-      latest-session/route.ts
+      articles/route.ts            # 기간별 기사 목록
+      category-totals/route.ts     # 카테고리별 누적 집계
+      keywords/route.ts            # 반복 키워드 집계
+      latest-session/route.ts      # 최신 정상 세션
+      sentiment/route.ts           # 일별 감성 추이
+      sessions/route.ts            # 기간별 세션 목록
+      stats/route.ts               # 주간/월간 요약 통계
 src/
-  App.tsx
-  components/
-  context/
-  lib/server/newsService.ts        # 서버 비즈니스 로직(분석/히스토리 집계)
+  components/                      # Dashboard, Analytics, Articles, Settings 등
+  context/                         # News, Settings, Theme 전역 상태
+  lib/server/
+    newsService.ts                 # 수집, 분석, DB 저장/조회 비즈니스 로직
+    logger.ts                      # 서버 로그 유틸
+scripts/
+  dev.mjs                          # 3000 포트 고정 개발 서버 실행
+docs/
+  TODO.md                          # 남은 작업과 개선 후보
+  HISTORY.md                       # 개발 이력
 ```
-
-## API 개요
-
-- GET/POST /api/news-analysis
-  - POST body로 설정 전달 가능
-  - enabledCategories: string[]
-  - articleLimit: number (6~30)
-  - temperature: number (0~1)
-- GET /api/history/sessions?period=7d|30d|today
-- GET /api/history/keywords?period=7d|30d|today
-- GET /api/history/sentiment?period=7d|30d|today
-- GET /api/history/articles?period=today|7d|30d
-- GET /api/history/category-totals?period=all|7d|30d|today
-- GET /api/history/stats
-- GET /api/history/latest-session
 
 ## 실행 방법
 
@@ -57,9 +58,9 @@ npm install
 npm run dev
 ```
 
-- 개발 서버: http://localhost:3000
+개발 서버는 기본적으로 `http://localhost:3000`에서 실행됩니다. `scripts/dev.mjs`가 포트 충돌을 먼저 검사하므로 3000 포트가 이미 사용 중이면 서버를 시작하지 않고 실패합니다.
 
-## 빌드/검증
+## 빌드와 검증
 
 ```bash
 npm run lint
@@ -67,17 +68,75 @@ npm run build
 npm run start
 ```
 
+- `npm run lint`: TypeScript 타입 검사(`tsc --noEmit`)
+- `npm run build`: Next.js 프로덕션 빌드
+- `npm run start`: 빌드 결과 실행
+
 ## 환경 변수
 
 ```bash
 GEMINI_API_KEY=...
 SUPABASE_URL=...
 SUPABASE_KEY=...
-# 선택: 모델 로테이션 커스텀
 GEMINI_MODELS=gemini-2.5-flash,gemini-2.5-flash-lite
 ```
 
+- `GEMINI_API_KEY`: Gemini API 호출에 필요합니다.
+- `SUPABASE_URL`: Supabase 프로젝트 URL입니다.
+- `SUPABASE_KEY`: 서버에서 DB 저장/조회에 사용하는 키입니다. 운영 환경에서는 service role 키 사용을 전제로 합니다.
+- `GEMINI_MODELS`: 선택값입니다. 쉼표로 구분된 모델 목록을 순환 사용하며 기본값은 `gemini-2.5-flash,gemini-2.5-flash-lite`입니다.
+
+## API
+
+### 뉴스 분석
+
+- `GET /api/news-analysis`: 기본 설정으로 뉴스 수집과 AI 분석을 실행합니다.
+- `POST /api/news-analysis`: 설정값을 body로 전달해 분석을 실행합니다.
+
+```json
+{
+  "enabledCategories": ["정치", "경제", "IT/과학"],
+  "articleLimit": 18,
+  "temperature": 0
+}
+```
+
+`articleLimit`은 6~30 범위에서 6의 배수로 보정되며, `temperature`는 0~1 범위로 보정됩니다.
+
+### 히스토리
+
+- `GET /api/history/latest-session`
+- `GET /api/history/sessions?period=today|7d|30d`
+- `GET /api/history/articles?period=today|7d|30d`
+- `GET /api/history/keywords?period=7d|30d`
+- `GET /api/history/sentiment?period=7d|30d`
+- `GET /api/history/category-totals?period=all|today|7d|30d`
+- `GET /api/history/stats`
+
+## 데이터 저장 개요
+
+Supabase에는 다음 테이블 구성을 전제로 저장합니다.
+
+- `news_sessions`: 분석 세션, 모델명, 수집 시각, 원본 AI 응답, 에러 여부
+- `category_stats`: 세션별 카테고리 기사 수와 평균 감성
+- `keyword_stats`: 세션별 키워드, 점수, 감성
+- `article_summaries`: 세션별 기사 제목, 요약, URL, 감성
+
+현재 `trendDrivers`, `dominantIssue`, `reason` 같은 확장 필드는 별도 컬럼이 아니라 `news_sessions.raw_data.data`에서 복원합니다.
+
 ## 배포
 
-Vercel에서 Next.js 프레임워크로 바로 배포합니다.
-vercel.json은 framework=nextjs만 유지합니다.
+Vercel의 Next.js 프레임워크로 배포합니다. `vercel.json`은 다음처럼 프레임워크 지정만 유지합니다.
+
+```json
+{
+  "framework": "nextjs"
+}
+```
+
+Docker로 실행할 경우 `Dockerfile`은 `npm install`, `npm run build`, `npm start` 순서로 앱을 실행합니다.
+
+## 문서
+
+- [TODO.md](docs/TODO.md): 앞으로 구현할 작업과 개선 후보
+- [HISTORY.md](docs/HISTORY.md): 주요 개발 이력과 검증 기록
