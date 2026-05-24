@@ -562,7 +562,7 @@ export async function getKeywords(period: string) {
             : 'neutral',
     }))
     .sort((a, b) => b.appearance_count - a.appearance_count || b.avg_score - a.avg_score)
-    .slice(0, 20);
+    .slice(0, 10);
 
   return { success: true, data };
 }

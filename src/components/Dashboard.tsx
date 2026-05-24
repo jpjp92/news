@@ -381,7 +381,7 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
                   ))}
                 </div>
               ) : (() => {
-                const topics = [...(data?.keyTopics || [])].sort((a, b) => b.score - a.score);
+                const topics = [...(data?.keyTopics || [])].sort((a, b) => b.score - a.score).slice(0, 10);
                 const maxScore = topics[0]?.score || 1;
                 return topics.map((topic, idx) => (
                   <div key={idx} className="flex items-center gap-2 py-2 border-b border-black/5 dark:border-white/10 last:border-0">
