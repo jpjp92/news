@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Luminous — 뉴스 모니터링</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous"/>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+<div id="root"></div>
+<div class="bg-scene">
+  <div class="orb o1"></div>
+  <div class="orb o2"></div>
+  <div class="orb o3"></div>
+</div>
+<div class="bg-grain"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="shared.jsx"></script>
+<script type="text/babel" src="dashboard.jsx"></script>
+<script type="text/babel" src="newslist.jsx"></script>
+<script type="text/babel" src="analytics.jsx"></script>
+<script type="text/babel" src="settings.jsx"></script>
+
+<script type="text/babel">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "theme": "ocean"
+}/*EDITMODE-END*/;
+
+const App = () => {
+  const [page, setPage] = React.useState(() => localStorage.getItem('lum.page') || 'dashboard');
+  const [article, setArticle] = React.useState(null);
+  const [theme, setTheme] = React.useState(() => localStorage.getItem('lum.theme') || TWEAK_DEFAULTS.theme);
+  const [tweaksOpen, setTweaksOpen] = React.useState(false);
+  const [editModeActive, setEditModeActive] = React.useState(false);
+
+  React.useEffect(() => { document.documentElement.dataset.theme = theme; localStorage.setItem('lum.theme', theme); }, [theme]);
+  React.useEffect(() => { localStorage.setItem('lum.page', page); }, [page]);
+
+  // Edit-mode protocol
+  React.useEffect(() => {
+    const handler = (e) => {
+      if (!e.data || !e.data.type) return;
+      if (e.data.type === '__activate_edit_mode') { setEditModeActive(true); setTweaksOpen(true); }
+      if (e.data.type === '__deactivate_edit_mode') { setEditModeActive(false); setTweaksOpen(false); }
+    };
+    window.addEventListener('message', handler);
+    window.parent.postMessage({type: '__edit_mode_available'}, '*');
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  const changeTheme = (t) => {
+    setTheme(t);
+    window.parent.postMessage({type: '__edit_mode_set_keys', edits: {theme: t}}, '*');
+  };
+
+  const nav = [
+    {id: 'dashboard', label: '대시보드', icon: 'dashboard'},
+    {id: 'news', label: '뉴스 리스트', icon: 'news', count: 1248},
+    {id: 'analytics', label: '분석', icon: 'chart'},
+    {id: 'settings', label: '설정', icon: 'settings'},
+  ];
+
+  const pageTitles = {
+    dashboard: '대시보드',
+    news: '뉴스 리스트',
+    analytics: '분석',
+    settings: '설정',
+  };
+
+  return (
+    <div className="app-shell" data-screen-label={`${pageTitles[page]}`}>
+      {/* Sidebar */}
+      <aside className="glass sidebar">
+        <div className="brand">
+          <div className="brand-mark">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="4"/>
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+            </svg>
+          </div>
+          <div className="brand-name">Lumi<em>nous</em></div>
+        </div>
+
+        <div className="nav-section-label">메뉴</div>
+        {nav.map(n => (
+          <div key={n.id} className={`nav-item ${page === n.id ? 'active' : ''}`} onClick={() => setPage(n.id)}>
+            <Icon name={n.icon} size={17}/>
+            <span>{n.label}</span>
+            {n.count && <span className="count">{n.count.toLocaleString()}</span>}
+          </div>
+        ))}
+
+        <div className="nav-section-label">컬렉션</div>
+        <div className="nav-item"><Icon name="bookmark" size={17}/><span>북마크</span><span className="count">24</span></div>
+        <div className="nav-item"><Icon name="inbox" size={17}/><span>읽기 대기함</span><span className="count">8</span></div>
+        <div className="nav-item"><Icon name="tag" size={17}/><span>태그 관리</span></div>
+
+        <div className="sidebar-footer">
+          <div className="profile-chip">
+            <div className="avatar">주</div>
+            <div style={{flex: 1, minWidth: 0}}>
+              <div className="name truncate">김주현</div>
+              <div className="role truncate">시니어 애널리스트</div>
+            </div>
+            <Icon name="chevronDown" size={14}/>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main */}
+      <main className="main">
+        <div className="topbar glass">
+          <div className="search">
+            <Icon name="search" size={16}/>
+            <input placeholder={`${pageTitles[page]}에서 검색...`}/>
+            <span className="kbd">⌘ K</span>
+          </div>
+          <div className="topbar-right">
+            <button className="icon-btn" onClick={() => setTweaksOpen(!tweaksOpen)} title="테마"><Icon name="palette" size={16}/></button>
+            <button className="icon-btn" title="알림"><Icon name="bell" size={16}/><span className="dot"></span></button>
+            <button className="icon-btn" title="북마크"><Icon name="bookmark" size={16}/></button>
+          </div>
+        </div>
+
+        {page === 'dashboard' && <DashboardPage openArticle={setArticle}/>}
+        {page === 'news' && <NewsListPage openArticle={setArticle}/>}
+        {page === 'analytics' && <AnalyticsPage/>}
+        {page === 'settings' && <SettingsPage/>}
+      </main>
+
+      {/* Article modal */}
+      {article && (
+        <div className="modal-backdrop" onClick={() => setArticle(null)}>
+          <div className="glass glass-strong modal" onClick={e => e.stopPropagation()}>
+            <div className="row" style={{justifyContent: 'space-between', marginBottom: 18}}>
+              <div className="row gap-sm">
+                <span className="chip" style={{padding: '3px 10px'}}>{article.categoryLabel}</span>
+                <span className="text-xs text-mono" style={{color: 'var(--accent)'}}>{article.source}</span>
+                <span className="text-xs text-tertiary">·</span>
+                <span className="text-xs text-tertiary">{article.timeAbs || article.time}</span>
+              </div>
+              <button className="icon-btn" onClick={() => setArticle(null)} style={{width: 32, height: 32}}><Icon name="close" size={14}/></button>
+            </div>
+
+            <h2 className="text-serif" style={{fontSize: 32, lineHeight: 1.2, marginBottom: 14, letterSpacing: '-0.02em'}}>{article.title}</h2>
+
+            <div className="row gap-sm" style={{marginBottom: 24, flexWrap: 'wrap'}}>
+              <span className="row gap-sm text-xs" style={{padding: '5px 10px', borderRadius: 99, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)'}}>
+                <span className={`sentiment-dot ${article.sentiment}`}></span>
+                <span className={`sentiment-text ${article.sentiment}`} style={{fontWeight: 600}}>
+                  {article.sentiment === 'pos' ? '긍정' : article.sentiment === 'neg' ? '부정' : '중립'} 감성
+                </span>
+              </span>
+              <span className="chip"><Icon name="eye" size={11}/> {article.reads} reads</span>
+              {article.trending && <span className="chip" style={{color: 'var(--accent)', borderColor: 'var(--accent)'}}><Icon name="trending" size={11}/> 트렌딩</span>}
+            </div>
+
+            <div style={{padding: 18, borderRadius: 14, background: 'var(--accent-soft)', border: '1px solid var(--accent)', marginBottom: 20}}>
+              <div className="row gap-sm" style={{marginBottom: 8}}>
+                <Icon name="spark" size={14}/>
+                <span className="text-xs text-mono" style={{color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.14em', fontWeight: 600}}>AI 3줄 요약</span>
+              </div>
+              <div className="text-sm" style={{lineHeight: 1.7, color: 'var(--text-secondary)'}}>{article.summary}</div>
+            </div>
+
+            <div className="text-sm text-secondary" style={{lineHeight: 1.75, marginBottom: 20}}>
+              {article.summary} 본 기사는 {article.source}에서 {article.time}에 게재되었으며, 
+              관련 분야에서 중요한 의미를 지니는 것으로 분석됩니다. 
+              유사 주제의 기사가 지난 24시간 동안 총 <strong style={{color: 'var(--text-primary)'}}>{Math.floor(Math.random()*30)+10}건</strong> 수집되었으며, 
+              관련 키워드는 아래와 같습니다.
+            </div>
+
+            <div className="row gap-sm" style={{flexWrap: 'wrap', marginBottom: 24}}>
+              {article.tags.map(t => <span key={t} className="chip">#{t}</span>)}
+            </div>
+
+            <div className="row gap-sm">
+              <button className="btn primary"><Icon name="external" size={14}/> 원문 보기</button>
+              <button className="btn"><Icon name="bookmark" size={14}/> 북마크</button>
+              <button className="btn"><Icon name="share" size={14}/> 공유</button>
+              <button className="btn ghost"><Icon name="spark" size={14}/> 더 요약하기</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tweaks panel */}
+      {tweaksOpen && (
+        <div className="glass glass-strong tweaks-panel">
+          <div className="row" style={{justifyContent: 'space-between', marginBottom: 14}}>
+            <h4 style={{margin: 0}}>Tweaks</h4>
+            <button className="icon-btn" style={{width: 26, height: 26}} onClick={() => setTweaksOpen(false)}><Icon name="close" size={12}/></button>
+          </div>
+          <div className="text-xs text-tertiary" style={{marginBottom: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em'}}>컬러 톤</div>
+          <div className="theme-swatches">
+            {[
+              {id: 'ocean', label: 'Ocean', bg: 'linear-gradient(145deg, #0a1428, #1a2b5c)', dot: 'oklch(0.82 0.12 220)'},
+              {id: 'nebula', label: 'Nebula', bg: 'linear-gradient(145deg, #130a28, #2d1a5e)', dot: 'oklch(0.78 0.14 310)'},
+              {id: 'arctic', label: 'Arctic', bg: 'linear-gradient(145deg, #0c1e2a, #1d4a60)', dot: 'oklch(0.88 0.1 195)'},
+            ].map(s => (
+              <div key={s.id} className={`swatch ${theme === s.id ? 'active' : ''}`}
+                onClick={() => changeTheme(s.id)}
+                style={{background: s.bg}}>
+                <div style={{position: 'absolute', top: 8, left: 8, width: 14, height: 14, borderRadius: '50%', background: s.dot, boxShadow: `0 0 10px ${s.dot}`}}></div>
+                <span>{s.label}</span>
+              </div>
+            ))}
+          </div>
+          <div className="divider"></div>
+          <div className="text-xs text-tertiary" style={{lineHeight: 1.5}}>
+            페이지 전환, 필터, 모달, 북마크 등 모든 상호작용이 작동합니다. 상단 돋보기·검색·메뉴를 자유롭게 눌러보세요.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+
+// Hover styles
+const style = document.createElement('style');
+style.textContent = `
+  .story-row:hover { background: var(--glass-bg); }
+  .story-row { border-radius: 10px; margin: 0 -6px; padding-left: 6px; padding-right: 6px; transition: background .18s; }
+  .feed-row:hover { background: var(--glass-bg); }
+  .article-card { transition: transform .2s, background .2s, border-color .2s; }
+  .article-card:hover { background: var(--glass-bg-hover); transform: translateY(-1px); border-color: var(--glass-border-strong); }
+  .cloud-word:hover { transform: translateY(-2px); opacity: 1 !important; }
+`;
+document.head.appendChild(style);
+</script>
+</body>
+</html>
