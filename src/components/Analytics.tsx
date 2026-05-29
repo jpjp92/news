@@ -272,7 +272,7 @@ export function Analytics() {
                     <p className="text-xs text-gray-500 dark:text-white/40">최근 7일 수집 세션 수 · 긍정 비율</p>
                   </div>
                 </div>
-                <div className="flex-1 -mx-6 -mb-6 min-h-[220px]">
+                <div className="h-[260px] -mx-6 -mb-6">
                   <TrendChart data={overviewChartData.length > 0 ? overviewChartData : undefined} transparent hideHeader className="!p-6" />
                 </div>
               </GlassCard>
@@ -337,7 +337,7 @@ export function Analytics() {
                   <p className="text-xs text-gray-500 dark:text-white/40">기간 내 수집 세션 수 · 긍정 비율</p>
                 </div>
               </div>
-              <div className="flex-1 -mx-6 -mb-6 min-h-[220px]">
+              <div className="h-[260px] -mx-6 -mb-6">
                 <TrendChart data={sentimentChartData.length > 0 ? sentimentChartData : undefined} transparent hideHeader className="!p-6" />
               </div>
             </GlassCard>
