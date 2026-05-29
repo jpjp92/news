@@ -35,6 +35,12 @@
 - 마이그레이션용 `SUPABASE_URL2`, `SUPABASE_KEY2`는 로컬 `.env`에서 제거
 - Vercel 환경변수도 동일하게 `SUPABASE_URL`, `SUPABASE_KEY`를 신규 프로젝트 값으로 갱신해야 함
 
+### UI 개선
+
+- 앱 전역 스크롤바를 얇은 반투명 indigo/purple 계열 디자인으로 변경
+- 스크롤바 트랙은 투명하게 유지하고 hover 시 thumb 대비만 강화
+- 라이트/다크 모드별 스크롤바 색상을 각각 조정
+
 ## 2026-05-24
 
 ### 문서 정리

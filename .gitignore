@@ -15,3 +15,5 @@ coverage/
 scripts/migrate-supabase.mjs
 db/migrations/000_cleanup_public_news_tables_if_empty.sql
 db/migrations/001_create_target_schema.sql
+tsconfig.tsbuildinfo
+tsconfig.tsbuildinfo
