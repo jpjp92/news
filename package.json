@@ -6,7 +6,9 @@
     "dev": "node scripts/dev.mjs",
     "build": "next build",
     "start": "next start",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "db:migrate:dry-run": "node scripts/migrate-supabase.mjs",
+    "db:migrate:apply": "node scripts/migrate-supabase.mjs --apply"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

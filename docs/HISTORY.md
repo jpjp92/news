@@ -2,6 +2,39 @@
 
 > 최근순 정렬
 
+## 2026-05-29
+
+### Supabase 프로젝트 이전
+
+- 신규 Supabase 프로젝트에 `newsdash` 스키마를 생성하고 뉴스 관련 테이블을 동일 명으로 구성
+- 이전 대상은 `news_sessions`, `category_stats`, `keyword_stats`, `article_summaries`, `keyword_trends`로 제한
+- `pages`, `workspaces`, `workspace_members`는 뉴스 데이터 이전 범위에서 제외
+- 실수로 생성했던 public 뉴스 테이블을 정리할 수 있는 cleanup SQL 추가
+- `newsdash` 스키마를 Supabase Data API exposed schemas에 추가해 REST 접근 가능하도록 설정
+
+### 마이그레이션 스크립트
+
+- `scripts/migrate-supabase.mjs` 추가
+- source는 기존 `public` 스키마, target은 신규 `newsdash` 스키마를 기본값으로 사용
+- dry-run과 apply 모드를 분리하고, 타겟 테이블이 비어 있지 않으면 기본적으로 중단하도록 구성
+- 필수값 누락, 에러 세션, 불완전 세션, URL 없는 기사, 중복 URL 기사를 이전 대상에서 제외
+- 중복 URL 기사는 최신 수집 세션의 기사 1건만 유지
+- `news_sessions.article_count`를 실제 이전된 기사 기준으로 재계산
+
+### 데이터 이전 결과
+
+- `news_sessions`: 76건 중 52건 이전, 24건 제외
+- `category_stats`: 264건 이전
+- `keyword_stats`: 240건 이전
+- `article_summaries`: 778건 중 720건 이전, 58건 제외
+- 최종 target `newsdash` 카운트는 `news_sessions=52`, `category_stats=264`, `keyword_stats=240`, `article_summaries=720`
+
+### 환경변수 전환
+
+- 로컬 `.env`의 `SUPABASE_URL`, `SUPABASE_KEY`를 신규 Supabase 프로젝트 값으로 전환
+- 마이그레이션용 `SUPABASE_URL2`, `SUPABASE_KEY2`는 로컬 `.env`에서 제거
+- Vercel 환경변수도 동일하게 `SUPABASE_URL`, `SUPABASE_KEY`를 신규 프로젝트 값으로 갱신해야 함
+
 ## 2026-05-24
 
 ### 문서 정리
