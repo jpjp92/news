@@ -56,8 +56,11 @@ const ai = new GoogleGenerativeAI(apiKeyToUse);
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_KEY || '';
+const supabaseSchema = process.env.SUPABASE_SCHEMA || 'newsdash';
 const supabase =
-  supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+  supabaseUrl && supabaseKey
+    ? createClient(supabaseUrl, supabaseKey, { db: { schema: supabaseSchema } })
+    : null;
 
 if (!supabase) {
   logger.warn('[Supabase] SUPABASE_URL or SUPABASE_KEY missing - DB saving disabled.');
