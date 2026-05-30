@@ -38,7 +38,16 @@ export function Articles() {
   const [selectedCategory, setSelectedCategory] = useState<string>('전체');
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 30;
+  const [isMobile, setIsMobile] = useState(false);
+  const pageSize = isMobile ? 10 : 30;
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 767px)');
+    const syncPageSize = () => setIsMobile(mediaQuery.matches);
+    syncPageSize();
+    mediaQuery.addEventListener('change', syncPageSize);
+    return () => mediaQuery.removeEventListener('change', syncPageSize);
+  }, []);
 
   // DB 기사 로딩
   useEffect(() => {
@@ -110,7 +119,7 @@ export function Articles() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [period, selectedCategory, sentimentFilter, searchQuery, sortOrder, useCurrentSessionFallback]);
+  }, [period, selectedCategory, sentimentFilter, searchQuery, sortOrder, useCurrentSessionFallback, pageSize]);
 
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
@@ -286,7 +295,7 @@ export function Articles() {
             </span>
             {filteredArticles.length > pageSize && (
               <span>
-                30개씩 페이지 단위로 보여줍니다
+                {pageSize}개씩 페이지 단위로 보여줍니다
               </span>
             )}
           </div>

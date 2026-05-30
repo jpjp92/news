@@ -34,20 +34,20 @@ export function TrendChart({
   const hasData = chartData.length > 0;
   
   return (
-    <Container className={`p-6 h-full flex flex-col ${className}`}>
+    <Container className={`p-4 md:p-6 h-full flex flex-col ${className}`}>
       {!hideHeader && (
-        <div className="flex items-center justify-between mb-6 shrink-0">
-          <div>
-            <h3 className="text-lg font-bold text-gray-800 dark:text-white">{title}</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{subtitle}</p>
+        <div className="flex items-start justify-between gap-3 mb-4 md:mb-6 shrink-0">
+          <div className="min-w-0">
+            <h3 className="text-sm md:text-lg font-bold text-gray-800 dark:text-white leading-tight">{title}</h3>
+            <p className="text-[11px] md:text-sm text-gray-500 dark:text-gray-400 leading-snug mt-0.5">{subtitle}</p>
           </div>
-          <div className="flex gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-indigo-500"></span>
+          <div className="flex flex-col xs:flex-row gap-1.5 xs:gap-3 md:gap-4 text-[10px] md:text-sm shrink-0">
+            <div className="flex items-center gap-1.5 md:gap-2">
+              <span className="w-2 h-2 md:w-3 md:h-3 rounded-full bg-indigo-500"></span>
               <span className="text-gray-600 dark:text-gray-400">{articlesLabel}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-purple-400"></span>
+            <div className="flex items-center gap-1.5 md:gap-2">
+              <span className="w-2 h-2 md:w-3 md:h-3 rounded-full bg-purple-400"></span>
               <span className="text-gray-600 dark:text-gray-400">{sentimentLabel}</span>
             </div>
           </div>

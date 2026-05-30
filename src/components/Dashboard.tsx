@@ -69,11 +69,11 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
   const isEmptyState = !loading && !error && (!data || (data.summaries?.length || 0) === 0);
 
   return (
-    <div className="p-4 space-y-6 pb-10 w-full overflow-x-hidden">
+    <div className="p-3 md:p-4 space-y-5 md:space-y-6 pb-10 w-full overflow-x-hidden">
       <div className="flex justify-between items-end">
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white truncate">일일 뉴스 분석 리포트</h1>
-          <p className="text-sm md:text-base text-gray-600 dark:text-white/70 flex items-center gap-1 flex-wrap">
+          <h1 className="text-lg md:text-2xl font-bold text-gray-800 dark:text-white truncate">일일 뉴스 분석 리포트</h1>
+          <p className="text-xs md:text-base text-gray-600 dark:text-white/70 flex items-center gap-1 flex-wrap">
             네이버 뉴스 AI 기반 인사이트
             {modelUsed && <span className="px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-md text-[10px] md:text-xs font-medium border border-indigo-200 dark:border-indigo-800 shrink-0">{modelUsed}</span>}
             {collectedAt && <span className="text-[10px] md:text-xs text-gray-400 dark:text-white/30 shrink-0">{new Date(collectedAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })} 수집</span>}
@@ -82,7 +82,7 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
         <button 
           onClick={fetchData}
           disabled={loading}
-          className="flex items-center gap-1.5 px-3 py-2 md:px-4 md:py-2 bg-white/40 dark:bg-slate-800/40 hover:bg-white/60 dark:hover:bg-slate-700/60 backdrop-blur-md border border-white/50 dark:border-white/10 rounded-xl text-indigo-700 dark:text-indigo-400 font-medium transition-all disabled:opacity-50 text-sm shrink-0"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 md:px-4 md:py-2 bg-white/40 dark:bg-slate-800/40 hover:bg-white/60 dark:hover:bg-slate-700/60 backdrop-blur-md border border-white/50 dark:border-white/10 rounded-xl text-indigo-700 dark:text-indigo-400 font-medium transition-all disabled:opacity-50 text-xs md:text-sm shrink-0"
         >
           <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
           <span className="hidden xs:inline">새로고침</span>
@@ -92,11 +92,11 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
 
       {error && (
         <GlassCard className="p-4 bg-red-50/50 border-red-200/50 flex flex-col gap-2 text-red-600">
-          <div className="flex items-center gap-3 font-semibold">
-            <AlertCircle size={20} />
+          <div className="flex items-center gap-3 font-semibold text-sm md:text-base">
+            <AlertCircle size={18} className="md:w-5 md:h-5" />
             <p>뉴스 분석 오류</p>
           </div>
-          <p className="text-sm ml-8">
+          <p className="text-xs md:text-sm ml-8">
             {error.includes('API key not valid') || error.includes('GEMINI_API_KEY') ? (
               <>
                 <strong>Gemini API 키가 설정되지 않았거나 유효하지 않습니다.</strong><br/>
@@ -114,8 +114,8 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
         <GlassCard className="p-5 md:p-6 border-amber-200/60 dark:border-amber-500/20 bg-amber-50/40 dark:bg-amber-900/10">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="font-semibold text-amber-800 dark:text-amber-300">표시할 분석 데이터가 아직 없습니다</p>
-              <p className="text-sm text-amber-700/80 dark:text-amber-200/70 mt-1">
+              <p className="text-sm md:text-base font-semibold text-amber-800 dark:text-amber-300">표시할 분석 데이터가 아직 없습니다</p>
+              <p className="text-xs md:text-sm text-amber-700/80 dark:text-amber-200/70 mt-1">
                 처음 접속했거나 저장된 세션이 없을 수 있습니다. 지금 바로 수집/분석을 실행해보세요.
               </p>
             </div>
@@ -138,7 +138,7 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
           </div>
           <div className="min-w-0">
             <p className="text-[10px] md:text-xs font-medium text-gray-500 dark:text-white/60 truncate">기사 수</p>
-            <h3 className="text-xl md:text-3xl font-bold text-gray-800 dark:text-white">
+            <h3 className="text-lg md:text-3xl font-bold text-gray-800 dark:text-white">
               {loading ? '..' : data?.summaries?.length || 0}
             </h3>
           </div>
@@ -150,7 +150,7 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
           </div>
           <div className="min-w-0">
             <p className="text-[10px] md:text-xs font-medium text-gray-500 dark:text-white/60 truncate">기사 긍정 비율</p>
-            <h3 className="text-xl md:text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+            <h3 className="text-lg md:text-3xl font-bold text-emerald-600 dark:text-emerald-400">
               {loading ? '..' : `${sentimentStats.posPct}%`}
             </h3>
           </div>
@@ -162,7 +162,7 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
           </div>
           <div className="min-w-0">
             <p className="text-[10px] md:text-xs font-medium text-gray-500 dark:text-white/60 truncate">기사 부정 비율</p>
-            <h3 className="text-xl md:text-3xl font-bold text-rose-500 dark:text-rose-400">
+            <h3 className="text-lg md:text-3xl font-bold text-rose-500 dark:text-rose-400">
               {loading ? '..' : `${sentimentStats.negPct}%`}
             </h3>
           </div>
@@ -174,7 +174,7 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
           </div>
           <div className="min-w-0">
             <p className="text-[10px] md:text-xs font-medium text-gray-500 dark:text-white/60 truncate">키워드</p>
-            <h3 className="text-xl md:text-3xl font-bold text-gray-800 dark:text-white">
+            <h3 className="text-lg md:text-3xl font-bold text-gray-800 dark:text-white">
               {loading ? '..' : data?.keyTopics?.length || 0}
             </h3>
           </div>
@@ -188,27 +188,27 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
             { label: '주간 통계', sublabel: '최근 7일', icon: <CalendarDays size={16} />, stats: periodStats.week, color: 'indigo' as const },
             { label: '월간 통계', sublabel: '최근 30일', icon: <BarChart3 size={16} />, stats: periodStats.month, color: 'purple' as const },
           ].map(({ label, sublabel, icon, stats, color }) => (
-            <GlassCard key={label} className="p-4 flex items-center gap-4">
+            <GlassCard key={label} className="p-3 md:p-4 flex items-center gap-3 md:gap-4">
               <div className={`p-2.5 rounded-xl flex-shrink-0 ${periodCardStyles[color]}`}>
                 {icon}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2 mb-2">
-                  <p className="text-sm font-bold text-gray-700 dark:text-white">{label}</p>
+                  <p className="text-xs md:text-sm font-bold text-gray-700 dark:text-white">{label}</p>
                   <p className="text-xs text-gray-400 dark:text-white/30">{sublabel}</p>
                 </div>
                 <div className="flex gap-4">
                   <div>
                     <p className="text-[10px] text-gray-400 dark:text-white/30">수집 기사</p>
-                    <p className="text-base font-bold text-gray-700 dark:text-white">{stats.article_count.toLocaleString()}개</p>
+                    <p className="text-sm md:text-base font-bold text-gray-700 dark:text-white">{stats.article_count.toLocaleString()}개</p>
                   </div>
                   <div>
                     <p className="text-[10px] text-gray-400 dark:text-white/30">수집 세션</p>
-                    <p className="text-base font-bold text-gray-700 dark:text-white">{stats.session_count}회</p>
+                    <p className="text-sm md:text-base font-bold text-gray-700 dark:text-white">{stats.session_count}회</p>
                   </div>
                   <div>
                     <p className="text-[10px] text-gray-400 dark:text-white/30">긍정 비율</p>
-                    <p className={`text-base font-bold ${stats.positive_pct !== null ? 'text-emerald-500' : 'text-gray-300 dark:text-white/20'}`}>
+                    <p className={`text-sm md:text-base font-bold ${stats.positive_pct !== null ? 'text-emerald-500' : 'text-gray-300 dark:text-white/20'}`}>
                       {stats.positive_pct !== null ? `${stats.positive_pct}%` : '-'}
                     </p>
                   </div>
@@ -240,13 +240,13 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
             />
           </GlassCard>
           
-          <GlassCard className="p-6 overflow-hidden border-indigo-200/30 dark:border-indigo-500/20 relative">
+          <GlassCard className="p-4 md:p-6 overflow-hidden border-indigo-200/30 dark:border-indigo-500/20 relative">
             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
             <div className="flex items-center gap-2 mb-4">
               <div className="p-2 bg-indigo-100/50 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400">
                 <Sparkles size={18} />
               </div>
-              <h3 className="text-sm font-bold text-gray-800 dark:text-white">전체 뉴스 트렌드 분석</h3>
+              <h3 className="text-xs md:text-sm font-bold text-gray-800 dark:text-white">전체 뉴스 트렌드 분석</h3>
             </div>
             {loading ? (
               <div className="animate-pulse space-y-3">
@@ -257,7 +257,7 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
             ) : (
               <div className="relative">
                 <div className="absolute -left-3 top-0 bottom-0 w-1 bg-indigo-500/20 rounded-full"></div>
-                <p className="text-gray-700 dark:text-slate-200 leading-relaxed font-medium pl-2 italic">
+                <p className="text-xs md:text-base text-gray-700 dark:text-slate-200 leading-relaxed font-medium pl-2 italic">
                   "{data?.overallTrend || "현재 분석된 주요 뉴스 트렌드가 없습니다."}"
                 </p>
                 {!!data?.trendDrivers?.length && (
@@ -279,14 +279,14 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
             )}
           </GlassCard>
 
-          <GlassCard className="p-6">
+          <GlassCard className="p-4 md:p-6">
             <div className="flex items-center justify-between mb-4 gap-2">
-              <h3 className="text-sm font-bold text-gray-800 dark:text-white whitespace-nowrap">최근 뉴스 요약</h3>
+              <h3 className="text-xs md:text-sm font-bold text-gray-800 dark:text-white whitespace-nowrap">최근 뉴스 요약</h3>
               <div className="flex gap-2 flex-shrink-0">
                 {data && data.summaries.length > 5 && (
                   <button
                     onClick={() => setShowAllSummaries(!showAllSummaries)}
-                    className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-0.5 font-medium transition-colors whitespace-nowrap"
+                    className="text-[11px] md:text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-0.5 font-medium transition-colors whitespace-nowrap"
                   >
                     {showAllSummaries ? (
                       <><ChevronUp size={13} />축소</>
@@ -298,7 +298,7 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
                 {setActiveTab && (
                   <button
                     onClick={() => setActiveTab('articles')}
-                    className="text-xs text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 flex items-center gap-0.5 font-medium transition-colors whitespace-nowrap"
+                    className="text-[11px] md:text-xs text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 flex items-center gap-0.5 font-medium transition-colors whitespace-nowrap"
                   >
                     전체 기사 <ArrowRight size={13} />
                   </button>
@@ -321,17 +321,17 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
                   <div 
                     key={idx} 
                     onClick={() => setActiveTab?.('articles')}
-                    className="p-4 rounded-xl bg-white/20 dark:bg-white/5 border border-white/30 dark:border-white/10 hover:bg-white/40 dark:hover:bg-white/10 transition-colors cursor-pointer group"
+                    className="p-3 md:p-4 rounded-xl bg-white/20 dark:bg-white/5 border border-white/30 dark:border-white/10 hover:bg-white/40 dark:hover:bg-white/10 transition-colors cursor-pointer group"
                   >
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="px-2.5 py-1 text-xs font-semibold bg-indigo-100/50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-full">
+                      <span className="px-2 py-0.5 md:px-2.5 md:py-1 text-[10px] md:text-xs font-semibold bg-indigo-100/50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-full">
                         {item.category}
                       </span>
-                      <h4 className="font-bold text-gray-800 dark:text-slate-100 line-clamp-1 flex-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" title={item.title}>
+                      <h4 className="text-xs md:text-base font-bold text-gray-800 dark:text-slate-100 line-clamp-1 flex-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" title={item.title}>
                         {item.title}
                       </h4>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-slate-300 ml-1">{item.summary}</p>
+                    <p className="text-xs md:text-sm text-gray-600 dark:text-slate-300 ml-1">{item.summary}</p>
                   </div>
                 ))
               )}
@@ -342,8 +342,8 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
         <div className="space-y-6">
           <SentimentGauge topics={data?.keyTopics || []} loading={loading} />
 
-          <GlassCard className="p-6">
-            <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-4">주요 카테고리 분포</h3>
+          <GlassCard className="p-4 md:p-6">
+            <h3 className="text-xs md:text-sm font-bold text-gray-800 dark:text-white mb-4">주요 카테고리 분포</h3>
             <div className="space-y-3">
               {loading ? (
                 <div className="animate-pulse space-y-3">
@@ -355,8 +355,8 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
                 data?.categories?.map((cat, idx) => (
                   <div key={idx} className="p-3 rounded-xl bg-white/20 dark:bg-white/5 border border-white/30 dark:border-white/10">
                     <div className="flex items-center justify-between gap-3">
-                      <span className="font-medium text-gray-700 dark:text-slate-300">{cat.name}</span>
-                      <span className="font-bold text-indigo-600 dark:text-indigo-400 flex-shrink-0">{cat.count}개</span>
+                      <span className="text-xs md:text-base font-medium text-gray-700 dark:text-slate-300">{cat.name}</span>
+                      <span className="text-xs md:text-base font-bold text-indigo-600 dark:text-indigo-400 flex-shrink-0">{cat.count}개</span>
                     </div>
                     {cat.dominantIssue && (
                       <p className="text-xs text-gray-500 dark:text-white/40 mt-1 line-clamp-2">{cat.dominantIssue}</p>
@@ -367,8 +367,8 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
             </div>
           </GlassCard>
 
-          <GlassCard className="p-5 overflow-hidden">
-            <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-4">실시간 인기 키워드</h3>
+          <GlassCard className="p-4 md:p-5 overflow-hidden">
+            <h3 className="text-xs md:text-sm font-bold text-gray-800 dark:text-white mb-4">실시간 인기 키워드</h3>
             <div className="max-h-[188px] overflow-y-auto overscroll-contain pr-1 -mr-1">
               {loading ? (
                 <div className="animate-pulse space-y-3">
@@ -388,10 +388,10 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
                     <span className="text-[10px] text-gray-400 dark:text-white/30 font-mono w-5 flex-shrink-0">
                       {String(idx + 1).padStart(2, '0')}
                     </span>
-                    <span className="text-sm text-gray-700 dark:text-white/85 font-medium flex-1 truncate">
+                    <span className="text-xs md:text-sm text-gray-700 dark:text-white/85 font-medium flex-1 truncate">
                       {topic.keyword}
                     </span>
-                    <span className={`text-xs flex-shrink-0 ${
+                    <span className={`text-[11px] md:text-xs flex-shrink-0 ${
                       topic.sentiment === 'positive' ? 'text-emerald-500' :
                       topic.sentiment === 'negative' ? 'text-rose-500' :
                       'text-slate-400'

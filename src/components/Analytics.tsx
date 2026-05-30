@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { GlassCard } from './GlassCard';
 import { TrendChart } from './TrendChart';
-import { BarChart3, TrendingUp, RefreshCw, AlertCircle, PieChart, Activity, Calendar, Repeat2 } from 'lucide-react';
+import { BarChart3, TrendingUp, RefreshCw, AlertCircle, PieChart, Activity, Calendar, Repeat2, ChevronDown } from 'lucide-react';
 import { useNews } from '../context/NewsContext';
 
 type Period = 'current' | 'today' | '7d' | '30d';
@@ -64,6 +64,7 @@ export function Analytics() {
   const [histError, setHistError] = useState<string | null>(null);
   const [categoryTotals, setCategoryTotals] = useState<CategoryTotal[]>([]);
   const [overviewTrend, setOverviewTrend] = useState<SentimentDay[]>([]);
+  const [showAllTopics, setShowAllTopics] = useState(false);
 
   // 마운트 시 전체 카테고리 집계 + 7d 트렌드 로드
   useEffect(() => {
@@ -114,6 +115,17 @@ export function Analytics() {
     sentimentTrend.filter(d =>
       d.session_count > 0 && (d.positive_pct + d.negative_pct + d.neutral_pct) > 0
     ), [sentimentTrend]);
+
+  const sortedKeyTopics = useMemo(() =>
+    [...(data?.keyTopics || [])].sort((a, b) => b.score - a.score), [data?.keyTopics]);
+
+  const topKeyTopics = sortedKeyTopics.slice(0, 5);
+  const restKeyTopics = sortedKeyTopics.slice(5);
+  const topicSentimentCounts = useMemo(() => ({
+    positive: sortedKeyTopics.filter(topic => topic.sentiment === 'positive').length,
+    negative: sortedKeyTopics.filter(topic => topic.sentiment === 'negative').length,
+    neutral: sortedKeyTopics.filter(topic => topic.sentiment !== 'positive' && topic.sentiment !== 'negative').length,
+  }), [sortedKeyTopics]);
 
   const isHistorical = period !== 'current';
 
@@ -175,33 +187,98 @@ export function Analytics() {
         ) : (
           <div className="space-y-6">
             <GlassCard className="p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-indigo-100/50 dark:bg-indigo-900/30 rounded-xl text-indigo-600 dark:text-indigo-400">
-                  <TrendingUp size={24} />
+              <div className="flex items-start justify-between gap-4 mb-5">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="p-3 bg-indigo-100/50 dark:bg-indigo-900/30 rounded-xl text-indigo-600 dark:text-indigo-400">
+                    <TrendingUp size={24} />
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="text-xl font-bold text-gray-800 dark:text-white">주요 토픽 분석</h2>
+                    <p className="text-xs text-gray-500 dark:text-white/40 mt-1">
+                      점수순 Top 5 우선 표시 · 총 {sortedKeyTopics.length}개 토픽
+                    </p>
+                  </div>
                 </div>
-                <h2 className="text-xl font-bold text-gray-800 dark:text-white">주요 토픽 분석</h2>
+                <div className="hidden sm:flex items-center gap-2 text-xs text-gray-500 dark:text-white/40 shrink-0">
+                  <span className="px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-300">긍정 {topicSentimentCounts.positive}</span>
+                  <span className="px-2 py-1 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-300">부정 {topicSentimentCounts.negative}</span>
+                  <span className="px-2 py-1 rounded-full bg-slate-500/10 text-slate-500 dark:text-slate-300">중립 {topicSentimentCounts.neutral}</span>
+                </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[...(data?.keyTopics || [])].sort((a, b) => b.score - a.score).map((topic, idx) => (
-                  <div key={idx} className="p-4 rounded-xl border border-gray-100 dark:border-gray-800 bg-white/30 dark:bg-white/5 flex justify-between items-start gap-3">
-                    <div className="min-w-0">
-                      <h4 className="font-semibold text-gray-800 dark:text-gray-200">{topic.keyword}</h4>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {topic.sentiment === 'positive' ? '긍정적' : topic.sentiment === 'negative' ? '부정적' : '중립적'}
-                      </p>
-                      {topic.reason && (
-                        <p className="text-xs text-gray-500 dark:text-white/40 mt-2 line-clamp-2">{topic.reason}</p>
+              {sortedKeyTopics.length > 0 ? (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
+                    {topKeyTopics.map((topic, idx) => (
+                      <div key={`${topic.keyword}-${idx}`} className="p-4 rounded-xl border border-gray-100 dark:border-gray-800 bg-white/30 dark:bg-white/5 flex flex-col gap-3 min-h-[148px]">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="text-[10px] font-mono text-gray-400 dark:text-white/30">{String(idx + 1).padStart(2, '0')}</span>
+                          <div className={`text-lg font-bold ${
+                            topic.sentiment === 'positive' ? 'text-emerald-500' :
+                            topic.sentiment === 'negative' ? 'text-rose-500' : 'text-gray-500'
+                          }`}>
+                            {topic.score}
+                          </div>
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="font-semibold text-gray-800 dark:text-gray-200 truncate">{topic.keyword}</h4>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {topic.sentiment === 'positive' ? '긍정적' : topic.sentiment === 'negative' ? '부정적' : '중립적'}
+                          </p>
+                          {topic.reason && (
+                            <p className="text-xs text-gray-500 dark:text-white/40 mt-2 line-clamp-3">{topic.reason}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {restKeyTopics.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-black/5 dark:border-white/10">
+                      <button
+                        type="button"
+                        onClick={() => setShowAllTopics(prev => !prev)}
+                        className="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl text-sm text-gray-600 dark:text-white/60 hover:bg-white/40 dark:hover:bg-white/5 transition-colors"
+                      >
+                        <span>나머지 토픽 {restKeyTopics.length}개 {showAllTopics ? '접기' : '보기'}</span>
+                        <ChevronDown size={16} className={`transition-transform ${showAllTopics ? 'rotate-180' : ''}`} />
+                      </button>
+                      {showAllTopics && (
+                        <div className="mt-3 max-h-64 overflow-y-auto overscroll-contain pr-1 space-y-2">
+                          {restKeyTopics.map((topic, idx) => (
+                            <div key={`${topic.keyword}-${idx + 5}`} className="flex items-start gap-3 rounded-xl bg-white/20 dark:bg-white/5 border border-white/30 dark:border-white/10 px-3 py-2.5">
+                              <span className="text-[10px] text-gray-400 dark:text-white/30 font-mono w-5 shrink-0 pt-0.5">
+                                {String(idx + 6).padStart(2, '0')}
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className="text-sm font-medium text-gray-700 dark:text-white/80 truncate">{topic.keyword}</span>
+                                  <span className={`text-[10px] shrink-0 ${
+                                    topic.sentiment === 'positive' ? 'text-emerald-500' :
+                                    topic.sentiment === 'negative' ? 'text-rose-500' : 'text-slate-400'
+                                  }`}>
+                                    {topic.sentiment === 'positive' ? '긍정' : topic.sentiment === 'negative' ? '부정' : '중립'}
+                                  </span>
+                                </div>
+                                {topic.reason && (
+                                  <p className="text-xs text-gray-500 dark:text-white/40 mt-1 line-clamp-1">{topic.reason}</p>
+                                )}
+                              </div>
+                              <span className={`text-sm font-bold shrink-0 ${
+                                topic.sentiment === 'positive' ? 'text-emerald-500' :
+                                topic.sentiment === 'negative' ? 'text-rose-500' : 'text-gray-500'
+                              }`}>
+                                {topic.score}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </div>
-                    <div className={`text-lg font-bold ${
-                      topic.sentiment === 'positive' ? 'text-emerald-500' :
-                      topic.sentiment === 'negative' ? 'text-rose-500' : 'text-gray-500'
-                    }`}>
-                      {topic.score}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-gray-400 dark:text-white/30 text-center py-8">토픽 데이터 없음</p>
+              )}
             </GlassCard>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
