@@ -367,12 +367,12 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
             </div>
           </GlassCard>
 
-          <GlassCard className="p-5">
+          <GlassCard className="p-5 overflow-hidden">
             <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-4">실시간 인기 키워드</h3>
-            <div className="space-y-0">
+            <div className="max-h-[188px] overflow-y-auto overscroll-contain pr-1 -mr-1">
               {loading ? (
                 <div className="animate-pulse space-y-3">
-                  {Array.from({ length: 4 }).map((_, i) => (
+                  {Array.from({ length: 5 }).map((_, i) => (
                     <div key={i} className="flex items-center gap-2 py-2">
                       <div className="h-3 w-5 bg-white/30 rounded"></div>
                       <div className="h-3 flex-1 bg-white/30 rounded"></div>
@@ -381,7 +381,7 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
                   ))}
                 </div>
               ) : (() => {
-                const topics = [...(data?.keyTopics || [])].sort((a, b) => b.score - a.score).slice(0, 10);
+                const topics = [...(data?.keyTopics || [])].sort((a, b) => b.score - a.score);
                 const maxScore = topics[0]?.score || 1;
                 return topics.map((topic, idx) => (
                   <div key={idx} className="flex items-center gap-2 py-2 border-b border-black/5 dark:border-white/10 last:border-0">
