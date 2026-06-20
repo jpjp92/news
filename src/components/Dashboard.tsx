@@ -124,7 +124,7 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
               disabled={loading}
               className="px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50"
             >
-              지금 분석 시작
+              재시도
             </button>
           </div>
         </GlassCard>

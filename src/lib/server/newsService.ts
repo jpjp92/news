@@ -407,35 +407,71 @@ export async function analyzeNews(settings: NewsSettings = {}) {
   const currentModel = GEMINI_MODELS[currentModelIndex];
   currentModelIndex = (currentModelIndex + 1) % GEMINI_MODELS.length;
 
-  const prompt = `
-Analyze the following news headlines and provide a JSON response.
-STRICT INSTRUCTION: ALL text fields (overallTrend, summaries, keyword) MUST be written in KOREAN.
-ENGLISH IS STRICTLY FORBIDDEN for any descriptive text.
+  const prompt = `<role>
+당신은 한국 뉴스 감성 분류 전문가입니다. 주어진 뉴스 헤드라인을 분석해 JSON 형식으로 응답합니다.
+모든 텍스트 필드는 반드시 한국어로 작성하세요.
+</role>
 
-Headlines:
+<sentiment_criteria>
+각 기사의 sentiment를 아래 기준으로 판단하세요. 애매할 경우 더 구체적인 기준을 우선 적용하세요.
+
+<label value="positive">
+다음 중 하나 이상 해당:
+- 경제 지표 개선: 성장, 흑자, 회복, 반등, 상승, 호조, 최고치
+- 기업/산업 호재: 수출 증가, 투자 유치, 신제품 출시 성공, 실적 개선
+- 사회 긍정: 범죄 감소, 복지 확대, 취업률 상승, 안전 강화
+- 해결·타결: 분쟁 해결, 협약 체결, 구조 성공
+</label>
+
+<label value="negative">
+다음 중 하나 이상 해당:
+- 경제 지표 악화: 하락, 적자, 침체, 부진, 최저치, 실업 증가
+- 기업/산업 악재: 파산, 구조조정, 리콜, 수출 감소, 실적 악화
+- 사회 부정: 사고, 사망, 범죄, 갈등 심화, 피해, 논란, 비리
+- 위기·악화: 분쟁 격화, 제재, 규제 강화(부담 증가 맥락)
+</label>
+
+<label value="neutral">
+다음에 해당:
+- 단순 사실 보도: 일정 발표, 인사이동, 통계 발표(방향성 없음)
+- 정책·계획 발표: 결과가 미확정인 검토·추진·예정 기사
+- 양면적 내용: 긍정과 부정이 균형을 이루는 기사
+- 분류 불가: positive/negative 기준 어느 쪽도 명확하지 않은 경우
+</label>
+</sentiment_criteria>
+
+<score_criteria name="sentimentScore" range="1-100">
+- 70~100: 명확한 positive
+- 51~69: 약한 positive
+- 50: neutral
+- 31~49: 약한 negative
+- 1~30: 명확한 negative
+</score_criteria>
+
+<headlines>
 ${topHeadlines
-  .map((h, i) => `${i + 1}. [Category: ${h.expectedCategory || 'Unknown'}] [${sanitizeText(h.title)}](${h.url})`)
+  .map((h, i) => `<item index="${i + 1}" category="${h.expectedCategory || 'Unknown'}">${sanitizeText(h.title)}</item>`)
   .join('\n')}
+</headlines>
 
-Respond ONLY with a valid JSON object.
-CRITICAL JSON RULES:
-1. NEVER use double quotes (") inside value strings. Use single quotes (') or plain text.
-2. Ensure every property name is in double quotes.
-3. NO trailing commas.
-4. Provide the result as ONE compact JSON object.
+<output_rules>
+- 유효한 JSON 객체 하나만 출력하세요. 다른 텍스트 없이 JSON만 출력하세요.
+- 문자열 값 안에 큰따옴표(")를 사용하지 마세요. 작은따옴표(')나 일반 텍스트를 사용하세요.
+- 모든 속성명은 큰따옴표로 감싸세요.
+- 후행 쉼표(trailing comma) 금지.
+- summary: 80자 이내 한국어
+- overallTrend: 2~3문장 한국어
+</output_rules>
 
-IMPORTANT: Keep the "summary" field under 80 Korean characters.
-The "overallTrend" should be 2-3 Korean sentences.
-
-Structure:
+<output_schema>
 {
   "overallTrend": "...",
   "trendDrivers": ["..."],
   "categories": [{ "name": "...", "count": 1, "averageSentiment": 50, "dominantIssue": "..." }],
-  "keyTopics": [{ "keyword": "...", "sentiment": "positive/negative/neutral", "score": 1, "reason": "..." }],
-  "summaries": [{ "title": "...", "summary": "...", "category": "...", "url": "...", "sentiment": "positive/negative/neutral", "sentimentScore": 50 }]
+  "keyTopics": [{ "keyword": "...", "sentiment": "positive|negative|neutral", "score": 1, "reason": "..." }],
+  "summaries": [{ "title": "...", "summary": "...", "category": "...", "url": "...", "sentiment": "positive|negative|neutral", "sentimentScore": 50 }]
 }
-`;
+</output_schema>`;
 
   const normalizedModel = currentModel.toLowerCase();
   const isGemini = normalizedModel.includes('gemini');

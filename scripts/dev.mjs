@@ -1,7 +1,7 @@
 import net from 'node:net';
 import { spawn } from 'node:child_process';
 
-const port = Number(process.env.PORT || 3000);
+const port = Number(process.env.PORT || 3001);
 
 function checkPort(value) {
   return new Promise((resolve, reject) => {
@@ -21,7 +21,7 @@ try {
   process.exit(1);
 }
 
-const child = spawn('npm', ['exec', '--', 'next', 'dev', '-p', String(port)], {
+const child = spawn('npm', ['exec', '--', 'next', 'dev', '-p', String(port), '-H', '0.0.0.0'], {
   stdio: 'inherit',
   env: process.env,
 });

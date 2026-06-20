@@ -1,0 +1,30 @@
+{
+  "trained_at": "2026-06-20T04:07:27.325436",
+  "mode": "finetuned_classifier",
+  "total_samples": 934,
+  "results": [
+    {
+      "model": "klue/roberta-large",
+      "mode": "finetuned_classifier",
+      "output_dir": "/content/news_sentiment_klue",
+      "val_samples": 141,
+      "accuracy": 0.8723,
+      "f1_macro": 0.8627,
+      "f1_per_class": {
+        "positive": 0.9263,
+        "neutral": 0.7671,
+        "negative": 0.8947
+      }
+    }
+  ],
+  "model": "klue/roberta-large",
+  "output_dir": "/content/news_sentiment_klue",
+  "val_samples": 141,
+  "accuracy": 0.8723,
+  "f1_macro": 0.8627,
+  "f1_per_class": {
+    "positive": 0.9263,
+    "neutral": 0.7671,
+    "negative": 0.8947
+  }
+}

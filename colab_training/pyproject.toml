@@ -1,0 +1,12 @@
+[project]
+name = "colab-training"
+version = "0.1.0"
+description = "뉴스 감성 모델 월간 학습 파이프라인"
+requires-python = ">=3.12"
+dependencies = []
+# 의존성은 부모 워크스페이스(~/devs/github/pyproject.toml)에서 상속
+# supabase, torch, transformers, scikit-learn, datasets 등 이미 포함됨
+#
+# 실행:
+#   cd ~/devs/github && uv run news_monitoring/news_dash/colab_training/train_sentiment.py
+#   cd news_dash/colab_training && bash run_training.sh

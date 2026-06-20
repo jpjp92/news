@@ -2,6 +2,182 @@
 
 > 최근순 정렬
 
+## 2026-06-20
+
+### Gemini 감성 분류 프롬프트 개선
+
+`src/lib/server/newsService.ts`의 뉴스 분석 프롬프트를 XML 태그 구조로 재작성.
+
+#### 변경 이유
+
+파인튜닝 실험(934건) 결과 neutral F1이 0.680~0.795로 가장 낮음.
+원인 분석 결과 학습 데이터 레이블 품질 문제 확인:
+- 기존 프롬프트에 감성 분류 기준이 전혀 없어 Gemini 재량으로 레이블 부여
+- positive/negative/neutral 정의 없이 `"sentiment": "positive/negative/neutral"` 한 줄뿐
+- neutral이 "기준 미달 잔여 범주"로 처리되어 가장 이질적인 집합이 됨
+
+#### 변경 내용
+
+| 항목 | 이전 | 이후 |
+|------|------|------|
+| 프롬프트 구조 | 마크다운 `##` 헤더 | XML 태그 (`<role>`, `<sentiment_criteria>` 등) |
+| 감성 기준 | 없음 | positive/negative/neutral 각각 구체적 기준 명시 |
+| sentimentScore | 예시 50 하나 | 1~100 구간별 의미 정의 |
+| 헤드라인 포맷 | `[Category: ...] [title](url)` | `<item index="N" category="...">title</item>` |
+| 출력 지시 | 영어 혼재 | `<output_rules>`, `<output_schema>` 분리 |
+
+#### 감성 분류 기준 요약
+
+- **positive**: 경제 지표 개선, 기업 호재, 사회 긍정, 분쟁 해결·타결
+- **negative**: 경제 지표 악화, 기업 악재, 사고·범죄·피해·논란, 위기 격화
+- **neutral**: 단순 사실 보도, 결과 미확정 정책 발표, 양면적 내용, 분류 불가
+
+#### 기대 효과
+
+신규 수집 세션부터 개선된 기준으로 레이블 부여.
+데이터 2000건 이상 누적 후 v2 재학습 시 neutral F1 개선 예상.
+
+---
+
+### 감성 분류 모델 실험 (Colab CLI + T4 GPU)
+
+### 감성 분류 모델 실험 (Colab CLI + T4 GPU)
+
+뉴스 대시보드에 축적된 `article_summaries` 데이터(934건)를 활용해 로컬 감성 분류 모델을 실험.
+현재 Gemini API 의존을 줄이고 배치 처리 속도·비용을 개선하는 것이 목표.
+
+#### 데이터 현황
+
+| 항목 | 수치 |
+|------|------|
+| 전체 기사 | 934건 |
+| 감성 레이블 | 934건 (100%) |
+| positive | 299건 |
+| neutral | 272건 |
+| negative | 363건 |
+| 수집 세션 | 64건 |
+
+#### 실험 1 — KLUE-RoBERTa-base 파인튜닝 (베이스라인)
+
+- 모델: `klue/roberta-base`
+- 설정: epochs=5, lr=3e-5, batch=32
+- GPU: Colab T4
+
+| 클래스 | F1 |
+|--------|----|
+| positive | 0.920 |
+| neutral | 0.680 |
+| negative | 0.840 |
+| **F1 macro** | **0.815** |
+| **Accuracy** | **82.3%** |
+
+→ neutral이 가장 약함. 클래스 불균형 원인.
+
+#### 실험 2 — Gemma 제로샷 비교 (실패)
+
+- 모델: `google/gemma-4-E2B-it-qat-mobile-transformers`
+- 결과: Accuracy 29.1%, F1 0.150 — 전부 neutral로만 예측
+- 원인: QAT mobile 전용 포맷으로 `AutoModelForCausalLM` 가중치 불일치, 실질적으로 랜덤 가중치로 추론
+
+#### 실험 3 — Gemma 4 4B-it 제로샷
+
+- 모델: `google/gemma-4-E4B-it` (`AutoModelForMultimodalLM`)
+- VRAM: 7.7GB (T4 16GB 내 적재)
+- 결과: Accuracy 29.1%, F1 0.150 — 동일하게 전부 neutral로만 예측
+- 원인: 프롬프트 응답 파싱 문제. 생성 결과 첫 단어만 추출하는 방식이 Gemma 4 응답 형식과 불일치
+
+#### 실험 4 — KLUE-RoBERTa-large + 클래스 가중치 (최종)
+
+- 모델: `klue/roberta-large` (base → large 업그레이드)
+- 개선 사항:
+  - `roberta-large` (파라미터 3배)
+  - 역빈도 클래스 가중치 (neutral 보정)
+  - learning rate `3e-5 → 2e-5`, epochs `5 → 8`
+  - Rich 터미널 진행 표시 (epoch별 loss/acc/F1 실시간 테이블)
+- GPU: Colab T4, batch=16, fp16
+
+| 클래스 | Precision | Recall | F1 |
+|--------|-----------|--------|----|
+| positive | 0.953 | 0.911 | **0.932** |
+| neutral | 0.745 | 0.854 | **0.795** |
+| negative | 0.922 | 0.855 | **0.887** |
+| **F1 macro** | | **0.872** | **0.871** |
+| **Accuracy** | | | **87.2%** |
+
+#### 실험 5 — 레이블 스무딩 + Cosine Scheduler
+
+- 추가 적용: 레이블 스무딩 0.1 + `lr_scheduler_type=cosine`
+- 가설: 경계 모호한 neutral 과적합 방지 + LR 부드러운 감소로 수렴 개선
+
+| 클래스 | F1 |
+|--------|----|
+| positive | 0.926 |
+| neutral | 0.767 |
+| negative | 0.895 |
+| **F1 macro** | **0.863** |
+| **Accuracy** | **87.2%** |
+
+→ 실험 4(v2) 대비 소폭 하락. 934건 규모에서는 스무딩 0.1이 클래스 가중치 효과를 희석시킴.
+  데이터 2000건 이상일 때 재시도 예정.
+
+#### 실험 6 — Cosine with Hard Restarts (v4b)
+
+- 설정: v2 + `get_cosine_with_hard_restarts_schedule_with_warmup` (2 cycles)
+- `create_scheduler` 오버라이드로 구현 (TrainingArguments에 직접 전달 불가)
+- 결과: F1 macro 0.864 — v2 대비 소폭 하락
+
+| 클래스 | F1 |
+|--------|----|
+| positive | - |
+| neutral | 0.795 |
+| negative | - |
+| **F1 macro** | **0.864** |
+| **Accuracy** | **86.7%** |
+
+→ Cosine restarts도 v2 개선 효과 없음. 934건 규모에서 스케줄러 변형보다 클래스 가중치 자체가 지배적.
+
+#### 실험 7 — KR-ELECTRA-discriminator
+
+- 모델: `snunlp/KR-ELECTRA-discriminator` (base 110M, discriminator 헤드)
+- 설정: batch=32, lr=3e-5, epochs=10, 역빈도 클래스 가중치 (v2와 동일)
+- 실행: `colab run --keep` (T4)
+- 완료 시각: 2026-06-20 04:58
+
+| 클래스 | F1 |
+|--------|----|
+| positive | 0.932 |
+| neutral | 0.780 |
+| negative | 0.879 |
+| **F1 macro** | **0.864** |
+| **Accuracy** | **86.7%** |
+
+→ v2(roberta-large) 대비 F1 -0.007, Accuracy -0.005. neutral F1도 0.795 → 0.780으로 소폭 하락.
+  ELECTRA base(110M)가 roberta-large(336M) 대비 불리하며, 파라미터 규모 차이가 주된 요인으로 추정.
+
+#### 전체 실험 비교
+
+| 실험 | 모델 | 주요 변경 | Accuracy | F1 macro | neutral F1 |
+|------|------|-----------|----------|----------|------------|
+| v1 | klue/roberta-base | 베이스라인 | 82.3% | 0.815 | 0.680 |
+| **v2** | klue/roberta-large | large + 클래스 가중치 | **87.2%** | **0.871** | **0.795** |
+| v3 | klue/roberta-large | v2 + 스무딩0.1 + cosine | 87.2% | 0.863 | 0.767 |
+| v4b | klue/roberta-large | v2 + cosine_with_restarts | 86.7% | 0.864 | 0.795 |
+| electra | KR-ELECTRA-discriminator | 클래스 가중치 (base 110M) | 86.7% | 0.864 | 0.780 |
+
+**현재 최고: v2** — 월간 재학습 기본 설정으로 채택
+
+**소견**: 934건 규모에서 스케줄러 변형·스무딩·아키텍처 변경은 모두 v2보다 하락. 클래스 가중치 + roberta-large 조합이 현 데이터에서 최적.  
+**다음 실험 후보**: 데이터 2000건 도달 시 앙상블(v2 + ELECTRA) 또는 스무딩 0.05 재시도.
+
+#### 인프라 구성
+
+- `colab_training/train_sentiment.py` — 학습 스크립트 (klue/gemma 모드)
+- `colab_training/run_training.sh` — 월간 자동 실행 (T4 고정, .env 로드)
+- `colab_training/test_gemma4.py` — Gemma 4 전용 테스트 스크립트
+- `colab_training/pyproject.toml` — uv 환경 (`~/devs/github` 워크스페이스)
+- 결과 저장: `models/sentiment/YYYYMM/{mode}/eval_report.json`
+- cron 등록 예정: 매월 1일 03:00
+
 ## 2026-05-29
 
 ### Supabase 프로젝트 이전
