@@ -11,10 +11,11 @@ export async function GET() {
     const result = await analyzeNews();
     return NextResponse.json(result);
   } catch (error: any) {
-    logger.error('[API] GET /api/news-analysis failed', error?.message || error);
+    const httpStatus: number = error?.httpStatus || 500;
+    logger.error('[API] GET /api/news-analysis failed', { message: error?.message, httpStatus });
     return NextResponse.json(
-      { success: false, error: 'Failed to analyze news: ' + (error?.message || 'Unknown error') },
-      { status: 500 },
+      { success: false, httpStatus },
+      { status: httpStatus },
     );
   }
 }
@@ -26,10 +27,11 @@ export async function POST(request: Request) {
     const result = await analyzeNews(body || {});
     return NextResponse.json(result);
   } catch (error: any) {
-    logger.error('[API] POST /api/news-analysis failed', error?.message || error);
+    const httpStatus: number = error?.httpStatus || 500;
+    logger.error('[API] POST /api/news-analysis failed', { message: error?.message, httpStatus });
     return NextResponse.json(
-      { success: false, error: 'Failed to analyze news: ' + (error?.message || 'Unknown error') },
-      { status: 500 },
+      { success: false, httpStatus },
+      { status: httpStatus },
     );
   }
 }

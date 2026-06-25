@@ -2,6 +2,56 @@
 
 > 최근순 정렬
 
+## 2026-06-25
+
+### API 에러 처리 강화 및 사용자 친화적 에러 메시지
+
+#### 변경 파일
+
+- `src/lib/server/newsService.ts`
+- `app/api/news-analysis/route.ts`
+- `src/context/NewsContext.tsx`
+
+#### 문제 상황
+
+- Gemini API 429/503 발생 시 다른 모델로 재시도 없이 바로 전체 분석 실패
+- 네이버 크롤링에서 HTTP 오류 응답(503 등)을 `response.ok` 체크 없이 그대로 파싱 시도
+- route.ts가 모든 예외를 HTTP 500으로 반환 — 클라이언트가 에러 종류 구분 불가
+- 프론트 `NewsContext`가 `res.ok` 미체크 상태에서 `.json()` 호출, HTTP 에러 메시지를 그대로 노출
+
+#### 변경 내용
+
+**`newsService.ts`**
+
+- `isRetryableError()` 추가 — 429/503/rate_limit/resource_exhausted/overloaded 패턴 감지
+- `callGeminiWithRetry()` 추가 — 설정된 모델 목록(`GEMINI_MODELS`) 순서대로 순차 재시도
+  - 현재 모델 실패 시 다음 모델(기본: flash → flash-lite, 또는 그 반대)로 자동 폴백
+  - 재시도 불가 에러(파싱 오류 등)는 즉시 throw
+  - 모든 모델 소진 시 `httpStatus: 503` 포함 에러 throw
+- 네이버 fetch에 `response.ok` 체크 추가 — 503 등 HTTP 에러 시 해당 섹션 skip 후 계속 진행
+
+**`app/api/news-analysis/route.ts`**
+
+- catch 블록에서 `error.httpStatus`를 그대로 응답 status로 전달
+- 429면 HTTP 429, 503이면 HTTP 503 반환 — 클라이언트가 에러 종류 구분 가능
+- 에러 원문은 서버 로그에만 기록, 응답 body에는 `{ success: false, httpStatus }` 만 포함
+
+**`src/context/NewsContext.tsx`**
+
+- `getHttpErrorMessage(status)` 추가 — HTTP 상태코드별 한국어 안내 메시지 매핑
+
+  | 상태 | 메시지 |
+  |------|--------|
+  | 429 | AI 분석 요청 한도에 도달했습니다. 잠시 후 다시 시도해주세요. |
+  | 503 | AI 서비스가 일시적으로 점검 중입니다. 잠시 후 다시 시도해주세요. |
+  | 500 이상 | 서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요. |
+  | 네트워크 단절 | 네트워크 연결을 확인해주세요. |
+
+- `requestFreshAnalysis()` — fetch 자체 실패와 `res.ok` 실패를 각각 처리, 에러 시 구조화된 객체 반환
+- `initialize()` — `latest-session` 조회 실패 시 에러 표시 없이 신규 수집으로 진행
+
+---
+
 ## 2026-06-20
 
 ### Gemini 감성 분류 프롬프트 개선

@@ -84,7 +84,7 @@ GEMINI_MODELS=gemini-2.5-flash,gemini-2.5-flash-lite
 - `GEMINI_API_KEY`: Gemini API 호출에 필요합니다.
 - `SUPABASE_URL`: Supabase 프로젝트 URL입니다.
 - `SUPABASE_KEY`: 서버에서 DB 저장/조회에 사용하는 키입니다. 운영 환경에서는 service role 키 사용을 전제로 합니다.
-- `GEMINI_MODELS`: 선택값입니다. 쉼표로 구분된 모델 목록을 순환 사용하며 기본값은 `gemini-2.5-flash,gemini-2.5-flash-lite`입니다.
+- `GEMINI_MODELS`: 선택값입니다. 쉼표로 구분된 모델 목록을 순환 사용하며 기본값은 `gemini-2.5-flash,gemini-2.5-flash-lite`입니다. 429/503 등 재시도 가능한 에러 발생 시 목록의 다음 모델로 자동 폴백합니다.
 
 ## API
 
@@ -102,6 +102,8 @@ GEMINI_MODELS=gemini-2.5-flash,gemini-2.5-flash-lite
 ```
 
 `articleLimit`은 6~30 범위에서 6의 배수로 보정되며, `temperature`는 0~1 범위로 보정됩니다.
+
+Gemini API 429/503 에러 시 `GEMINI_MODELS` 목록의 다음 모델로 자동 재시도합니다. 모든 모델이 실패하면 해당 HTTP 상태코드(429 또는 503)를 그대로 반환하며, 에러 원문은 서버 로그에만 기록됩니다.
 
 ### 히스토리
 

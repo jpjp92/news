@@ -334,6 +334,67 @@ function resolveSections(enabledCategories?: string[]) {
   return picked.map(name => ({ name, id: CATEGORY_MAP[name] }));
 }
 
+function isRetryableError(e: any): boolean {
+  const msg = String(e?.message || '').toLowerCase();
+  const status = e?.status ?? e?.httpErrorCode ?? e?.code;
+  return (
+    status === 429 ||
+    status === 503 ||
+    msg.includes('429') ||
+    msg.includes('503') ||
+    msg.includes('rate limit') ||
+    msg.includes('resource_exhausted') ||
+    msg.includes('quota') ||
+    msg.includes('overloaded')
+  );
+}
+
+async function callGeminiWithRetry(
+  prompt: string,
+  temperature: number,
+  startIndex: number,
+): Promise<{ text: string; modelUsed: string; nextIndex: number }> {
+  for (let i = 0; i < GEMINI_MODELS.length; i++) {
+    const idx = (startIndex + i) % GEMINI_MODELS.length;
+    const modelName = GEMINI_MODELS[idx];
+    const isGemini = modelName.toLowerCase().includes('gemini');
+
+    try {
+      const response = await ai
+        .getGenerativeModel({
+          model: modelName,
+          generationConfig: {
+            ...(isGemini ? { responseMimeType: 'application/json' } : {}),
+            maxOutputTokens: 6000,
+            temperature,
+          },
+        })
+        .generateContent(prompt);
+
+      return {
+        text: response.response.text() || '',
+        modelUsed: modelName,
+        nextIndex: (idx + 1) % GEMINI_MODELS.length,
+      };
+    } catch (e: any) {
+      const retryable = isRetryableError(e);
+      logger.warn(`[Gemini] ${modelName} failed`, { message: e?.message, retryable, attempt: i + 1 });
+
+      if (!retryable || i === GEMINI_MODELS.length - 1) {
+        const err = new Error(`Gemini API error: ${e?.message || e}`);
+        (err as any).httpStatus = retryable ? 503 : 500;
+        throw err;
+      }
+
+      logger.info(`[Gemini] Retrying with next model (${GEMINI_MODELS[(idx + 1) % GEMINI_MODELS.length]})`);
+    }
+  }
+
+  const err = new Error('All Gemini models failed');
+  (err as any).httpStatus = 503;
+  throw err;
+}
+
 export async function analyzeNews(settings: NewsSettings = {}) {
   const sections = resolveSections(settings.enabledCategories);
   const articleLimit = clampArticleLimit(settings.articleLimit);
@@ -357,6 +418,11 @@ export async function analyzeNews(settings: NewsSettings = {}) {
           },
           cache: 'no-store',
         });
+
+        if (!response.ok) {
+          logger.warn(`[Naver] Section ${section.name} returned HTTP ${response.status}`);
+          return;
+        }
 
         const html = await response.text();
         const $ = cheerio.load(html);
@@ -403,9 +469,6 @@ export async function analyzeNews(settings: NewsSettings = {}) {
       modelUsed: GEMINI_MODELS[currentModelIndex],
     };
   }
-
-  const currentModel = GEMINI_MODELS[currentModelIndex];
-  currentModelIndex = (currentModelIndex + 1) % GEMINI_MODELS.length;
 
   const prompt = `<role>
 당신은 한국 뉴스 감성 분류 전문가입니다. 주어진 뉴스 헤드라인을 분석해 JSON 형식으로 응답합니다.
@@ -473,24 +536,12 @@ ${topHeadlines
 }
 </output_schema>`;
 
-  const normalizedModel = currentModel.toLowerCase();
-  const isGemini = normalizedModel.includes('gemini');
-
-  const [isDuplicate, aiResponse] = await Promise.all([
+  const [isDuplicate, { text: responseText, modelUsed: currentModel, nextIndex }] = await Promise.all([
     isDuplicateSession(topHeadlines.map(h => h.url)),
-    ai
-      .getGenerativeModel({
-        model: currentModel,
-        generationConfig: {
-          ...(isGemini ? { responseMimeType: 'application/json' } : {}),
-          maxOutputTokens: 6000,
-          temperature,
-        },
-      })
-      .generateContent(prompt),
+    callGeminiWithRetry(prompt, temperature, currentModelIndex),
   ]);
+  currentModelIndex = nextIndex;
 
-  const responseText = aiResponse.response.text() || '';
   let analysis = extractAndFixJson(responseText);
 
   if (!analysis) {

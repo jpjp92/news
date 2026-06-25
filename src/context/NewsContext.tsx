@@ -27,6 +27,13 @@ interface NewsContextType {
 
 const NewsContext = createContext<NewsContextType | undefined>(undefined);
 
+function getHttpErrorMessage(status: number): string {
+  if (status === 429) return 'AI 분석 요청 한도에 도달했습니다. 잠시 후 다시 시도해주세요.';
+  if (status === 503) return 'AI 서비스가 일시적으로 점검 중입니다. 잠시 후 다시 시도해주세요.';
+  if (status >= 500) return '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+  return '오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+}
+
 function hasMeaningfulData(analysis: NewsAnalysis | null | undefined) {
   if (!analysis) return false;
   if ((analysis.summaries?.length || 0) > 0) return true;
@@ -66,33 +73,40 @@ export function NewsProvider({ children }: { children: ReactNode }) {
     setRecentSearches([]);
   };
 
-  const requestFreshAnalysis = async () => {
-    const res = await fetch('/api/news-analysis', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(settings),
-    });
+  const requestFreshAnalysis = async (): Promise<{ success: boolean; data?: NewsAnalysis; modelUsed?: string; error?: string }> => {
+    let res: Response;
+    try {
+      res = await fetch('/api/news-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      });
+    } catch {
+      return { success: false, error: '네트워크 연결을 확인해주세요.' };
+    }
+
+    if (!res.ok) {
+      return { success: false, error: getHttpErrorMessage(res.status) };
+    }
 
     return res.json();
   };
 
-  // 새로고침: 실제 크롤링 + Gemma 분석
+  // 새로고침: 실제 크롤링 + Gemini 분석
   const fetchData = async () => {
     setLoading(true);
     setError(null);
     try {
       const json = await requestFreshAnalysis();
       if (json.success) {
-        setData(json.data);
+        setData(json.data ?? null);
         setModelUsed(json.modelUsed || '');
         setCollectedAt(new Date().toISOString());
       } else {
-        setError(json.error || 'Failed to fetch data');
+        setError(json.error || '데이터를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
       }
-    } catch (err) {
-      setError('Network error occurred');
+    } catch {
+      setError('오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setLoading(false);
     }
@@ -106,12 +120,19 @@ export function NewsProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       setError(null);
       try {
-        const latestRes = await fetch('/api/history/latest-session');
-        const latestJson = await latestRes.json();
+        let latestJson: any = null;
+        try {
+          const latestRes = await fetch('/api/history/latest-session');
+          if (latestRes.ok) {
+            latestJson = await latestRes.json();
+          }
+        } catch {
+          // DB 조회 실패 시 조용히 신규 수집으로 진행
+        }
 
         if (cancelled) return;
 
-        if (latestJson.success && hasMeaningfulData(latestJson.data)) {
+        if (latestJson?.success && hasMeaningfulData(latestJson.data)) {
           setData(latestJson.data);
           setModelUsed(latestJson.modelUsed || '');
           setCollectedAt(latestJson.collectedAt || null);
@@ -122,7 +143,7 @@ export function NewsProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
 
         if (freshJson.success) {
-          setData(freshJson.data);
+          setData(freshJson.data ?? null);
           setModelUsed(freshJson.modelUsed || '');
           setCollectedAt(new Date().toISOString());
         } else {
@@ -130,7 +151,7 @@ export function NewsProvider({ children }: { children: ReactNode }) {
         }
       } catch {
         if (!cancelled) {
-          setError('초기 데이터를 불러오는 중 네트워크 오류가 발생했습니다.');
+          setError('네트워크 연결을 확인해주세요.');
         }
       } finally {
         if (!cancelled) setLoading(false);
