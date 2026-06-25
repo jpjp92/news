@@ -62,15 +62,17 @@ export function Analytics() {
   const [sentimentTrend, setSentimentTrend] = useState<SentimentDay[]>([]);
   const [histLoading, setHistLoading] = useState(false);
   const [histError, setHistError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
   const [categoryTotals, setCategoryTotals] = useState<CategoryTotal[]>([]);
   const [overviewTrend, setOverviewTrend] = useState<SentimentDay[]>([]);
   const [showAllTopics, setShowAllTopics] = useState(false);
 
   // 마운트 시 전체 카테고리 집계 + 7d 트렌드 로드
   useEffect(() => {
+    const safeJson = (r: Response) => r.ok ? r.json() : Promise.resolve({ success: false });
     Promise.all([
-      fetch('/api/history/category-totals?period=all').then(r => r.json()),
-      fetch('/api/history/sentiment?period=7d').then(r => r.json()),
+      fetch('/api/history/category-totals?period=all').then(safeJson),
+      fetch('/api/history/sentiment?period=7d').then(safeJson),
     ]).then(([cats, trend]) => {
       if (cats.success) setCategoryTotals(cats.data);
       if (trend.success) setOverviewTrend(trend.data);
@@ -82,20 +84,30 @@ export function Analytics() {
     setHistLoading(true);
     setHistError(null);
 
+    const safeJson = (r: Response) => {
+      if (!r.ok) throw Object.assign(new Error(), { status: r.status });
+      return r.json();
+    };
+
     Promise.all([
-      fetch(`/api/history/sessions?period=${period}`).then(r => r.json()),
-      fetch(`/api/history/keywords?period=${period}`).then(r => r.json()),
-      fetch(`/api/history/sentiment?period=${period}`).then(r => r.json()),
+      fetch(`/api/history/sessions?period=${period}`).then(safeJson),
+      fetch(`/api/history/keywords?period=${period}`).then(safeJson),
+      fetch(`/api/history/sentiment?period=${period}`).then(safeJson),
     ])
       .then(([s, k, t]) => {
         setSessions(s.success ? (s.data || []).filter((session: Session) => Number(session.article_count) > 0) : []);
         setKeywords(k.success ? k.data : []);
         setSentimentTrend(t.success ? t.data : []);
-        if (!s.success) setHistError(s.error || '데이터 로드 실패');
+        if (!s.success) setHistError('데이터를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
       })
-      .catch(() => setHistError('네트워크 오류'))
+      .catch((err) => {
+        const status = err?.status;
+        if (status === 429) setHistError('요청 한도에 도달했습니다. 잠시 후 다시 시도해주세요.');
+        else if (status >= 500) setHistError('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        else setHistError('네트워크 연결을 확인해주세요.');
+      })
       .finally(() => setHistLoading(false));
-  }, [period]);
+  }, [period, retryKey]);
 
   const overviewChartData = useMemo(() =>
     overviewTrend.map(d => ({
@@ -169,8 +181,17 @@ export function Analytics() {
       {/* 에러 */}
       {(error || histError) && (
         <GlassCard className="p-4 bg-red-50/50 border-red-200/50 flex items-center gap-3 text-red-600 font-medium">
-          <AlertCircle size={20} />
-          <p className="text-sm">{error || histError}</p>
+          <AlertCircle size={20} className="shrink-0" />
+          <p className="text-sm flex-1">{error || histError}</p>
+          {histError && (
+            <button
+              onClick={() => setRetryKey(k => k + 1)}
+              className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-red-100/60 hover:bg-red-200/60 rounded-lg transition-colors"
+            >
+              <RefreshCw size={12} />
+              다시 시도
+            </button>
+          )}
         </GlassCard>
       )}
 

@@ -4,6 +4,65 @@
 
 ## 2026-06-25
 
+### 위험도 높은 안정성 이슈 일괄 수정
+
+#### 변경 파일
+
+- `app/api/history/sessions/route.ts`
+- `app/api/history/articles/route.ts`
+- `app/api/history/keywords/route.ts`
+- `app/api/history/sentiment/route.ts`
+- `app/api/history/category-totals/route.ts`
+- `app/api/history/stats/route.ts`
+- `app/api/history/latest-session/route.ts`
+- `src/lib/server/newsService.ts`
+- `src/components/Analytics.tsx`
+- `src/components/Articles.tsx`
+- `src/components/Dashboard.tsx`
+
+#### 수정 내용 (위험도 순)
+
+**[1] history route 7개 — try/catch 없음**
+
+서비스 함수가 throw하면 Next.js가 500 HTML을 반환하고, 프론트 `.json()` 파싱 실패로 무음 실패하는 구조였음.
+전체 handler에 try/catch를 추가하고 예외 발생 시 `{ success: false }` JSON을 500으로 반환.
+
+**[2] period 파라미터 검증 없음**
+
+`period` 쿼리스트링을 검증 없이 서비스 함수로 전달하던 구조 수정.
+각 route에 허용값 Set을 선언하고, 벗어난 값이 오면 400 반환.
+
+| route | 허용 period |
+|-------|-------------|
+| sessions | `today`, `7d`, `30d` |
+| articles | `today`, `7d`, `30d` |
+| keywords | `7d`, `30d` |
+| sentiment | `7d`, `30d` |
+| category-totals | `all`, `today`, `7d`, `30d` |
+| stats, latest-session | 파라미터 없음 |
+
+**[3] Naver fetch 타임아웃 없음**
+
+섹션별 `fetch()`에 `AbortSignal.timeout(10_000)` 추가.
+네이버가 응답하지 않을 경우 Vercel 함수 타임아웃(300s) 전체를 소진하던 문제 방지.
+
+**[4] Analytics/Articles 프론트 res.ok 체크 없음**
+
+`Analytics.tsx` 마운트 fetch와 기간 탭 fetch, `Articles.tsx` DB 기사 fetch 모두 `res.ok` 체크 없이 `.json()` 호출.
+HTTP 500/503 응답 시 body 파싱 실패 가능. `r.ok` 검사 추가 후 상태코드별 한국어 에러 메시지 표시.
+
+**[5] Analytics 히스토리 에러 시 재시도 버튼 없음**
+
+에러 카드를 보여줘도 사용자가 할 수 있는 액션이 없었음.
+`retryKey` state를 추가해 기간 탭 fetch useEffect의 의존성에 포함.
+에러 카드에 "다시 시도" 버튼을 추가해 클릭 시 `retryKey` 증가 → 재요청.
+
+**[6] Dashboard 에러카드 데드코드 제거**
+
+`error.includes('API key not valid')` 분기가 남아 있었으나, 이전 에러처리 개선으로 에러 메시지는 `getHttpErrorMessage()` 한국어 안내문으로 바뀌어 절대 매칭되지 않음. 분기 제거 후 `error`를 직접 표시하는 단순 카드로 정리.
+
+---
+
 ### API 에러 처리 강화 및 사용자 친화적 에러 메시지
 
 #### 변경 파일

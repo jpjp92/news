@@ -6,7 +6,12 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  logger.info('[API] GET /api/history/stats');
-  const result = await getStats();
-  return NextResponse.json(result, { status: result.success ? 200 : 500 });
+  try {
+    logger.info('[API] GET /api/history/stats');
+    const result = await getStats();
+    return NextResponse.json(result, { status: result.success ? 200 : 500 });
+  } catch (error: any) {
+    logger.error('[API] GET /api/history/stats failed', error?.message);
+    return NextResponse.json({ success: false }, { status: 500 });
+  }
 }

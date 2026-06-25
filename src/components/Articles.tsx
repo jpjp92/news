@@ -55,16 +55,24 @@ export function Articles() {
     setDbLoading(true);
     setDbError(null);
     fetch(`/api/history/articles?period=${period}`)
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw Object.assign(new Error(), { status: r.status });
+        return r.json();
+      })
       .then(json => {
         if (json.success) {
           setDbArticles(json.data);
           setSessionCount(json.session_count);
         } else {
-          setDbError(json.error || '데이터 로드 실패');
+          setDbError('데이터를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
         }
       })
-      .catch(() => setDbError('네트워크 오류'))
+      .catch((err) => {
+        const status = err?.status;
+        if (status === 429) setDbError('요청 한도에 도달했습니다. 잠시 후 다시 시도해주세요.');
+        else if (status >= 500) setDbError('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        else setDbError('네트워크 연결을 확인해주세요.');
+      })
       .finally(() => setDbLoading(false));
   }, [period, refreshKey]);
 

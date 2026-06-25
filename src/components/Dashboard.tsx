@@ -91,22 +91,9 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
       </div>
 
       {error && (
-        <GlassCard className="p-4 bg-red-50/50 border-red-200/50 flex flex-col gap-2 text-red-600">
-          <div className="flex items-center gap-3 font-semibold text-sm md:text-base">
-            <AlertCircle size={18} className="md:w-5 md:h-5" />
-            <p>뉴스 분석 오류</p>
-          </div>
-          <p className="text-xs md:text-sm ml-8">
-            {error.includes('API key not valid') || error.includes('GEMINI_API_KEY') ? (
-              <>
-                <strong>Gemini API 키가 설정되지 않았거나 유효하지 않습니다.</strong><br/>
-                로컬 환경의 <code>.env</code> 파일에 <code>GEMINI_API_KEY</code>가 올바르게 설정되어 있는지 확인해주세요.<br/>
-                <span className="text-xs opacity-75 mt-2 block">서버 요류 상세: {error}</span>
-              </>
-            ) : (
-              error
-            )}
-          </p>
+        <GlassCard className="p-4 bg-red-50/50 border-red-200/50 flex items-center gap-3 text-red-600">
+          <AlertCircle size={18} className="md:w-5 md:h-5 shrink-0" />
+          <p className="text-xs md:text-sm font-medium">{error}</p>
         </GlassCard>
       )}
 
