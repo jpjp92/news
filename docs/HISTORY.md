@@ -4,6 +4,20 @@
 
 ## 2026-06-25
 
+### Dashboard 빈 상태 카드 모바일 레이아웃 수정
+
+`src/components/Dashboard.tsx`
+
+"표시할 분석 데이터가 아직 없습니다" 카드의 재시도 버튼이 모바일에서 세로로 밀려 내려가는 문제 수정.
+
+- `items-start` → `items-center` — 텍스트·버튼 수직 가운데 정렬로 한 줄 유지
+- 제목 `text-xs md:text-sm`, 설명 `text-[10px] md:text-xs` 로 폰트 축소
+- 설명 문구에 `line-clamp-1`, 제목에 `truncate` 추가 — 긴 텍스트가 버튼을 밀지 않도록
+- 버튼 `shrink-0` + `whitespace-nowrap` — 오른쪽 고정, 줄바꿈 방지
+- 버튼 패딩·폰트 축소: `px-2.5 py-1.5 text-[11px] md:text-xs`
+
+---
+
 ### 위험도 높은 안정성 이슈 일괄 수정
 
 #### 변경 파일
