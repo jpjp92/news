@@ -1,0 +1,17 @@
+{
+  "tested_at": "2026-06-25T07:22:45.537289",
+  "model": "klue/roberta-large",
+  "target": "roberta",
+  "val_samples": 150,
+  "accuracy": 0.84,
+  "f1_macro": 0.8331,
+  "f1_per_class": {
+    "positive": 0.8958,
+    "neutral": 0.7294,
+    "negative": 0.8739
+  },
+  "baseline_roberta_large": {
+    "accuracy": 0.8723,
+    "f1_macro": 0.8714
+  }
+}

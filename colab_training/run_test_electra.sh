@@ -1,9 +1,10 @@
 #!/bin/bash
-# KR-ELECTRA 계열 감성 분류 테스트 (T4)
+# 뉴스 도메인 감성 분류 백본 비교 테스트 (T4)
 # 사용법:
 #   bash run_test_electra.sh              # KR-ELECTRA (기본)
-#   bash run_test_electra.sh finbert      # KR-FinBert-SC
+#   bash run_test_electra.sh finbert      # KR-FinBert-SC (금융 뉴스 감성)
 #   bash run_test_electra.sh koelectra    # koelectra-base-v3
+#   bash run_test_electra.sh kf-deberta   # kakaobank/kf-deberta-base (금융 DeBERTa)
 
 set -euo pipefail
 
@@ -12,7 +13,8 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 TEST_SCRIPT="$SCRIPT_DIR/test_electra.py"
 TARGET="${1:-electra}"
 SESSION_NAME="electra-test-$(date +%Y%m%d%H%M)-$TARGET"
-OUT_DIR="$PROJECT_ROOT/models/sentiment/electra_${TARGET}"
+# 비교 실험(리포트만) → experiments/<날짜>/<모델>/
+OUT_DIR="$PROJECT_ROOT/models/sentiment/experiments/$(date +%Y-%m-%d)/${TARGET}"
 LOG_FILE="$PROJECT_ROOT/logs/test_electra_${TARGET}_$(date +%Y%m%d).log"
 
 mkdir -p "$OUT_DIR" "$(dirname "$LOG_FILE")"
@@ -48,7 +50,9 @@ cleanup() {
 trap cleanup EXIT
 
 log "Colab T4 프로비저닝..."
-colab run --gpu T4 --keep -s "$SESSION_NAME" "$TMP_SCRIPT"
+# --timeout: 출력이 멈춘 채 허용하는 최대 시간(초). 기본 30초는 모델 저장 단계
+# (Writing model shards 등 출력 없는 구간)에서 끊기므로 넉넉히 600초로 설정.
+colab run --gpu T4 --keep --timeout 600 -s "$SESSION_NAME" "$TMP_SCRIPT"
 
 log "결과 다운로드..."
 mkdir -p "$OUT_DIR"

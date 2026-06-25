@@ -1,8 +1,14 @@
 """
-KR-ELECTRA 감성 분류 파인튜닝 테스트
-snunlp/KR-ELECTRA-discriminator vs klue/roberta-large 비교
+뉴스 도메인 감성 분류 백본 비교 테스트
+klue/roberta-large(baseline) vs ELECTRA / 금융 도메인 모델 비교
 
-실행: bash run_test_electra.sh
+후보:
+  electra    snunlp/KR-ELECTRA-discriminator      (일반 한국어 ELECTRA)
+  finbert    snunlp/KR-FinBert-SC                 (금융 뉴스 감성 사전학습)
+  koelectra  monologg/koelectra-base-v3           (일반 한국어 ELECTRA v3)
+  kf-deberta kakaobank/kf-deberta-base            (금융 도메인 DeBERTa-v2)
+
+실행: bash run_test_electra.sh [target]
 """
 import json
 import os
@@ -13,7 +19,9 @@ from datetime import datetime
 from pathlib import Path
 
 def _install():
-    pkgs = ["transformers", "datasets", "scikit-learn", "supabase", "accelerate", "rich"]
+    # sentencepiece/protobuf: DeBERTa 계열(kf-deberta) 토크나이저 의존성
+    pkgs = ["transformers", "datasets", "scikit-learn", "supabase", "accelerate",
+            "rich", "sentencepiece", "protobuf"]
     subprocess.run([sys.executable, "-m", "pip", "install", "-q"] + pkgs, check=True)
 
 _install()
@@ -43,12 +51,23 @@ console = Console()
 
 # ── 설정 ──────────────────────────────────────────────────────────────────────
 CANDIDATES = {
-    "electra":  "snunlp/KR-ELECTRA-discriminator",
-    "finbert":  "snunlp/KR-FinBert-SC",
-    "koelectra":"monologg/koelectra-base-v3-discriminator",
+    "electra":   "snunlp/KR-ELECTRA-discriminator",
+    "finbert":   "snunlp/KR-FinBert-SC",
+    "koelectra": "monologg/koelectra-base-v3-discriminator",
+    "kf-deberta":"kakaobank/kf-deberta-base",
+    "roberta":   "klue/roberta-large",   # baseline 자체를 현재 데이터로 재측정
+}
+# 모델별 하이퍼파라미터 (구조/크기 차이 반영)
+MODEL_CFG = {
+    "electra":   {"epochs": 10, "batch": 32, "lr": 3e-5},
+    "finbert":   {"epochs": 10, "batch": 16, "lr": 2e-5},   # BERT-base, 보수적 lr
+    "koelectra": {"epochs": 10, "batch": 32, "lr": 3e-5},
+    "kf-deberta":{"epochs": 10, "batch": 16, "lr": 2e-5},   # DeBERTa는 lr 민감, 작게
+    "roberta":   {"epochs": 8,  "batch": 16, "lr": 2e-5},   # 현행 채택 설정과 동일
 }
 TARGET      = os.environ.get("ELECTRA_MODEL", "electra")
 MODEL_ID    = CANDIDATES[TARGET]
+CFG         = MODEL_CFG.get(TARGET, {"epochs": 10, "batch": 32, "lr": 3e-5})
 OUTPUT_DIR  = f"/content/electra_{TARGET}"
 LABEL_MAP   = {"positive": 0, "neutral": 1, "negative": 2}
 ID2LABEL    = {0: "positive", 1: "neutral", 2: "negative"}
@@ -184,8 +203,11 @@ def train(texts, labels):
 
     with console.status(f"[cyan]{MODEL_ID} 로딩..."):
         tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
+        # finbert/kf-deberta 등 사전학습 분류 헤드가 있는 모델은
+        # 우리 레이블 순서(pos/neu/neg)에 맞춰 헤드를 재초기화한다.
         model = AutoModelForSequenceClassification.from_pretrained(
             MODEL_ID, num_labels=3, id2label=ID2LABEL, label2id=LABEL_MAP,
+            ignore_mismatched_sizes=True,
         )
 
     if torch.cuda.is_available():
@@ -213,19 +235,21 @@ def train(texts, labels):
             "f1_macro": float(f1_score(lbl, preds, average="macro")),
         }
 
-    # ELECTRA는 base(110M) → batch 크게, lr 높게 가능
-    n_epochs = 10
+    # 모델별 하이퍼파라미터 (MODEL_CFG에서 주입)
+    n_epochs = CFG["epochs"]
+    console.print(f"[dim]epochs={n_epochs}  batch={CFG['batch']}  lr={CFG['lr']:.0e}[/]")
     args = TrainingArguments(
         output_dir=OUTPUT_DIR,
         num_train_epochs=n_epochs,
-        per_device_train_batch_size=32,   # roberta-large(16) 대비 2배
-        per_device_eval_batch_size=64,
-        learning_rate=3e-5,               # ELECTRA는 조금 더 높게
+        per_device_train_batch_size=CFG["batch"],
+        per_device_eval_batch_size=CFG["batch"] * 2,
+        learning_rate=CFG["lr"],
         lr_scheduler_type="cosine",
         warmup_ratio=0.1,
         weight_decay=0.01,
         eval_strategy="epoch",
         save_strategy="epoch",
+        save_total_limit=1,               # 에포크 체크포인트 누적 방지 (best 1개만 유지)
         load_best_model_at_end=True,
         metric_for_best_model="f1_macro",
         fp16=torch.cuda.is_available(),
@@ -271,8 +295,19 @@ def train(texts, labels):
                          f"[bold]{report['macro avg']['f1-score']:.3f}[/]")
     console.print(Panel(result_table, title=f"[bold green]{MODEL_ID} 결과[/]"))
 
-    trainer.save_model(OUTPUT_DIR)
-    tokenizer.save_pretrained(OUTPUT_DIR)
+    # 모델 저장은 비교 테스트엔 불필요. SAVE_MODEL=1일 때만 저장한다.
+    # save_checkpoint.sh가 OUTPUT_DIR의 파일을 colab ls로 받아가므로,
+    # 에포크별 checkpoint-* 디렉터리(각 ~700MB)는 회수에 불필요 → 삭제해
+    # OUTPUT_DIR에 최종 모델 파일만 남긴다. (압축 안 함: 큰 tar는 정지/OOM 유발)
+    if os.environ.get("SAVE_MODEL", "0") == "1":
+        trainer.save_model(OUTPUT_DIR)
+        tokenizer.save_pretrained(OUTPUT_DIR)
+        import glob, shutil
+        for ck in glob.glob(os.path.join(OUTPUT_DIR, "checkpoint-*")):
+            shutil.rmtree(ck, ignore_errors=True)
+        files = sorted(f for f in os.listdir(OUTPUT_DIR) if os.path.isfile(os.path.join(OUTPUT_DIR, f)))
+        print("===CHECKPOINT_FILES=== " + " ".join(files), flush=True)
+        console.print(f"[green]✓[/] 체크포인트 저장: {OUTPUT_DIR} ({len(files)} files)")
 
     return {
         "model":      MODEL_ID,
@@ -327,6 +362,12 @@ def main():
     summary = {"tested_at": datetime.now().isoformat(), **result}
     with open(f"{OUTPUT_DIR}/eval_report.json", "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2, ensure_ascii=False)
+
+    # 다운로드가 실패해도 로그에서 지표를 회수할 수 있도록 stdout에 마커 출력.
+    # rich console이 아닌 print로 한 줄에 직렬화 → grep으로 추출 가능.
+    print("===RESULT_JSON_START===", flush=True)
+    print(json.dumps(summary, ensure_ascii=False), flush=True)
+    print("===RESULT_JSON_END===", flush=True)
     console.print(f"[green]✓[/] 저장: {OUTPUT_DIR}/eval_report.json")
 
 

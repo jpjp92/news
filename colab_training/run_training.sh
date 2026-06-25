@@ -18,12 +18,14 @@ TRAIN_SCRIPT="$SCRIPT_DIR/train_sentiment.py"
 MODELS_DIR="$PROJECT_ROOT/models/sentiment"
 LOGS_DIR="$PROJECT_ROOT/logs"
 TIMESTAMP="$(date +%Y%m)"
+DATE="$(date +%Y-%m-%d)"
 MODE="${1:-klue}"              # klue | gemma | both | gemma_ft
 EXPERIMENT="${2:-v2}"         # v2 | v4b | v4ab
 SESSION_NAME="news-training-$TIMESTAMP-${MODE}-${EXPERIMENT}"
-MODEL_OUT="$MODELS_DIR/$TIMESTAMP/${MODE}_${EXPERIMENT}"
+# 운영 학습은 가중치를 보관 → checkpoints/<날짜>/<모드>_<실험>/
+MODEL_OUT="$MODELS_DIR/checkpoints/$DATE/${MODE}_${EXPERIMENT}"
 
-mkdir -p "$MODELS_DIR/$TIMESTAMP" "$LOGS_DIR"
+mkdir -p "$MODEL_OUT" "$LOGS_DIR"
 LOG_FILE="$LOGS_DIR/training_${TIMESTAMP}_${MODE}_${EXPERIMENT}.log"
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"; }
@@ -115,10 +117,18 @@ fi
 # ── 결과 다운로드 ─────────────────────────────────────────────────────────────
 log "결과 다운로드..."
 mkdir -p "$MODEL_OUT"
-colab download -s "$SESSION_NAME" /content/news_sentiment "$MODEL_OUT" 2>/dev/null || \
-    log "[경고] 모델 파일 다운로드 실패 (eval_report.json만 있을 수 있음)"
 
-# eval_report.json은 항상 받기
+# 모델 체크포인트(가중치)는 /content/news_sentiment_klue 에 저장된다.
+# (train_sentiment.py run_klue: output = OUTPUT_BASE + "_klue")
+# 기존 버그: /content/news_sentiment 만 받아 eval_report.json 외 가중치가 유실됨.
+# klue/both 모드만 체크포인트가 존재. 가중치는 .gitignore 제외 → 로컬에만 보관된다.
+if [[ "$MODE" == "klue" || "$MODE" == "both" ]]; then
+    log "모델 체크포인트 다운로드 (로컬 보관용, ~1.3GB)..."
+    colab download -s "$SESSION_NAME" /content/news_sentiment_klue "$MODEL_OUT" 2>/dev/null || \
+        log "[경고] 체크포인트 다운로드 실패 — eval_report.json만 받습니다."
+fi
+
+# eval_report.json 은 항상 받기 (/content/news_sentiment/eval_report.json)
 colab download -s "$SESSION_NAME" /content/news_sentiment/eval_report.json \
     "$MODEL_OUT/eval_report.json" 2>/dev/null || true
 

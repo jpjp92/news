@@ -1,0 +1,17 @@
+{
+  "tested_at": "2026-06-25T07:25:18.062762",
+  "model": "snunlp/KR-ELECTRA-discriminator",
+  "target": "electra",
+  "val_samples": 150,
+  "accuracy": 0.8133,
+  "f1_macro": 0.8108,
+  "f1_per_class": {
+    "positive": 0.8542,
+    "neutral": 0.7158,
+    "negative": 0.8624
+  },
+  "baseline_roberta_large": {
+    "accuracy": 0.8723,
+    "f1_macro": 0.8714
+  }
+}

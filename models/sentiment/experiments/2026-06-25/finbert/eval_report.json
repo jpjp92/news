@@ -1,0 +1,17 @@
+{
+  "tested_at": "2026-06-25T06:10:39.790538",
+  "model": "snunlp/KR-FinBert-SC",
+  "target": "finbert",
+  "val_samples": 150,
+  "accuracy": 0.8133,
+  "f1_macro": 0.8062,
+  "f1_per_class": {
+    "positive": 0.8367,
+    "neutral": 0.7045,
+    "negative": 0.8772
+  },
+  "baseline_roberta_large": {
+    "accuracy": 0.8723,
+    "f1_macro": 0.8714
+  }
+}

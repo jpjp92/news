@@ -1,0 +1,19 @@
+{
+  "tested_at": "2026-06-25T19:42:00+09:00",
+  "model": "kakaobank/kf-deberta-base",
+  "target": "kf-deberta",
+  "checkpoint": true,
+  "val_samples": 150,
+  "accuracy": 0.8667,
+  "f1_macro": 0.859,
+  "f1_per_class": {
+    "positive": 0.907,
+    "neutral": 0.762,
+    "negative": 0.908
+  },
+  "baseline_roberta_large": {
+    "accuracy": 0.8723,
+    "f1_macro": 0.8714
+  },
+  "note": "checkpoints/2026-06-25/kf-deberta 가중치에 대응하는 eval. colab run의 eval_report는 make_archive 정지로 미생성되어 학습 로그 결과표에서 복원함."
+}
