@@ -1,7 +1,7 @@
 import net from 'node:net';
 import { spawn } from 'node:child_process';
 
-const port = Number(process.env.PORT || 3001);
+const port = Number(process.env.PORT || 3000);
 
 function checkPort(value) {
   return new Promise((resolve, reject) => {

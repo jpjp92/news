@@ -10,6 +10,7 @@ Next.js 기반 AI 뉴스 트렌드 대시보드입니다. 네이버 뉴스 섹�
 - 히스토리 분석: 오늘, 7일, 30일 기준 세션/키워드/감성/기사 조회
 - Supabase 저장: 세션, 카테고리 통계, 키워드 통계, 기사 요약 분리 저장
 - 반응형 UI: 대시보드, 핵심 분석, 최신뉴스, 설정 화면 제공
+- 로컬 감성 분류 모델 학습: 누적된 기사 데이터로 한국어 감성 분류 모델(KLUE-RoBERTa 등)을 Colab에서 파인튜닝 (`colab_training/`)
 
 ## 기술 스택
 
@@ -46,9 +47,19 @@ src/
     logger.ts                      # 서버 로그 유틸
 scripts/
   dev.mjs                          # 3000 포트 고정 개발 서버 실행
+  migrate-supabase.mjs             # Supabase 스키마 마이그레이션 (git 제외)
+colab_training/                    # 감성 분류 모델 학습 파이프라인 (Colab T4)
+  train_sentiment.py               # KLUE-RoBERTa 파인튜닝 본 스크립트
+  test_electra.py                  # 백본 비교 실험 (ELECTRA/FinBert/kf-deberta 등)
+  run_training.sh                  # 월간 학습 실행 래퍼
+  save_checkpoint.sh               # 단일 백본 학습 + 체크포인트 로컬 회수
+models/sentiment/                  # 학습 산출물 (가중치는 git 제외, 로컬 전용)
+  experiments/<날짜>/<모델>/        # 실험별 eval_report.json
+  checkpoints/<날짜>/<모드>/         # 보관 체크포인트 (가중치 로컬, eval_report만 커밋)
 docs/
   TODO.md                          # 남은 작업과 개선 후보
   HISTORY.md                       # 개발 이력
+  TRAINING.md                      # 감성 분류 모델 학습 현황과 실험 비교
 ```
 
 ## 실행 방법
@@ -58,7 +69,7 @@ npm install
 npm run dev
 ```
 
-개발 서버는 기본적으로 `http://localhost:3000`에서 실행됩니다. `scripts/dev.mjs`가 포트 충돌을 먼저 검사하므로 3000 포트가 이미 사용 중이면 서버를 시작하지 않고 실패합니다.
+개발 서버는 기본적으로 `http://localhost:3000`에서 실행됩니다. `scripts/dev.mjs`가 포트 충돌을 먼저 검사하므로 3000 포트가 이미 사용 중이면 서버를 시작하지 않고 실패합니다. 다른 포트를 쓰려면 `PORT=3001 npm run dev`처럼 환경변수로 지정합니다.
 
 ## 빌드와 검증
 
@@ -126,6 +137,22 @@ Supabase에는 다음 테이블 구성을 전제로 저장합니다.
 
 현재 `trendDrivers`, `dominantIssue`, `reason` 같은 확장 필드는 별도 컬럼이 아니라 `news_sessions.raw_data.data`에서 복원합니다.
 
+스키마 마이그레이션은 `scripts/migrate-supabase.mjs`로 수행합니다.
+
+```bash
+npm run db:migrate:dry-run   # 적용 없이 변경 내역만 출력
+npm run db:migrate:apply     # 실제 적용
+```
+
+## 감성 분류 모델 학습 (선택)
+
+Gemini API 의존을 줄이고 배치 감성 분석의 속도·비용을 개선하기 위해, Supabase에 누적된 `article_summaries` 데이터로 로컬 한국어 감성 분류 모델을 파인튜닝합니다. 학습은 Colab T4에서 실행되며, 가중치는 git에서 제외되어 로컬에만 보관됩니다(실험 결과 `eval_report.json`만 커밋).
+
+- 현재 채택 모델: `klue/roberta-large` (positive/neutral/negative 3분류, 입력 `title + summary`)
+- 학습 실행: `colab_training/run_training.sh` (월간 파인튜닝), `colab_training/save_checkpoint.sh` (단일 백본 체크포인트 보관)
+- 백본 비교 실험: `colab_training/test_electra.py` (ELECTRA / FinBert / koelectra / kf-deberta / roberta-large)
+- 상세 현황·실험 비교·경로 규칙은 [docs/TRAINING.md](docs/TRAINING.md) 참고
+
 ## 배포
 
 Vercel의 Next.js 프레임워크로 배포합니다. `vercel.json`은 다음처럼 프레임워크 지정만 유지합니다.
@@ -142,3 +169,4 @@ Docker로 실행할 경우 `Dockerfile`은 `npm install`, `npm run build`, `npm 
 
 - [TODO.md](docs/TODO.md): 앞으로 구현할 작업과 개선 후보
 - [HISTORY.md](docs/HISTORY.md): 주요 개발 이력과 검증 기록
+- [TRAINING.md](docs/TRAINING.md): 감성 분류 모델 학습 현황과 실험 비교
