@@ -33,7 +33,7 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
   };
 
   return (
-    <GlassCard className="h-16 mx-4 mt-4 px-6 flex items-center justify-between transition-colors duration-300">
+    <GlassCard className="h-16 mx-4 mt-4 mb-3 px-6 flex items-center justify-between bg-white/30 backdrop-blur-md border-white/40 shadow-[0_8px_24px_rgba(31,38,135,0.05)] transition-colors duration-300 dark:bg-slate-950/25 dark:backdrop-blur-md dark:border-white/[0.08] dark:shadow-[0_8px_24px_rgba(0,0,0,0.22)]">
       <div className="flex items-center gap-4 flex-1">
         <button 
           className="md:hidden text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
@@ -45,7 +45,7 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <input 
             type="text" 
-            placeholder="뉴스 검색..." 
+            placeholder="뉴스 검색" 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => setIsFocused(true)}

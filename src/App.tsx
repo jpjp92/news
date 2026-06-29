@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
@@ -19,7 +19,14 @@ function AppContent() {
   const [sidebarOpen, setSidebarOpen] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth >= 768 : true,
   );
+  const mainRef = useRef<HTMLElement>(null);
   const { theme } = useTheme();
+
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      if (mainRef.current) mainRef.current.scrollTop = 0;
+    });
+  }, [activeTab]);
 
   return (
     <div className={`h-screen flex overflow-hidden ${theme === 'dark' ? 'dark dark-bg' : 'bg-slate-50'} transition-colors duration-500 relative`}>
@@ -44,7 +51,7 @@ function AppContent() {
       
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative z-10">
         <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-        <main className="flex-1 overflow-y-auto overflow-x-hidden">
+        <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden">
           {activeTab === 'dashboard' && <Dashboard setActiveTab={setActiveTab} />}
           {activeTab === 'articles' && <Articles />}
           {activeTab === 'analytics' && <Analytics />}
