@@ -268,17 +268,19 @@ async function saveSessionToDb(
         : null,
     }));
 
-    const articleRows = (analysis.summaries ?? []).map(s => ({
-      session_id: sessionId,
-      title: s.title ?? '',
-      summary: s.summary ?? null,
-      category: s.category ?? null,
-      url: s.url ?? null,
-      sentiment: ['positive', 'neutral', 'negative'].includes(String(s.sentiment))
-        ? s.sentiment
-        : null,
-      sentiment_score: Number(s.sentimentScore) || null,
-    }));
+    const articleRows = (analysis.summaries ?? [])
+      .map(s => ({
+        session_id: sessionId,
+        title: s.title ?? '',
+        summary: s.summary ?? null,
+        category: s.category ?? null,
+        url: normalizeArticleUrl(s.url || '') || null,
+        sentiment: ['positive', 'neutral', 'negative'].includes(String(s.sentiment))
+          ? s.sentiment
+          : null,
+        sentiment_score: Number(s.sentimentScore) || null,
+      }))
+      .filter(row => row.url);
 
     let filteredArticleRows = articleRows;
     if (articleRows.length) {
@@ -290,7 +292,7 @@ async function saveSessionToDb(
           .in('url', urlsToCheck);
 
         const existingUrls = new Set((existing || []).map(e => e.url));
-        filteredArticleRows = articleRows.filter(r => !r.url || !existingUrls.has(r.url));
+        filteredArticleRows = articleRows.filter(r => r.url && !existingUrls.has(r.url));
       }
     }
 
@@ -815,11 +817,12 @@ export async function getArticles(period: string) {
 
   const sessionDateMap = new Map((sessions || []).map(s => [s.id, s.collected_at]));
   const seenUrls = new Set<string>();
-  const seenTitles = new Set<string>();
 
   const deduped = (articles || [])
+    .filter(a => normalizeArticleUrl(a.url || ''))
     .map((a, index) => ({
       ...a,
+      url: normalizeArticleUrl(a.url || ''),
       collected_at: sessionDateMap.get(a.session_id) || null,
       order_index: index,
     }))
@@ -828,13 +831,8 @@ export async function getArticles(period: string) {
       return dateCompare !== 0 ? dateCompare : a.order_index - b.order_index;
     })
     .filter(a => {
-      if (a.url) {
-        if (seenUrls.has(a.url)) return false;
-        seenUrls.add(a.url);
-      } else {
-        if (seenTitles.has(a.title)) return false;
-        seenTitles.add(a.title);
-      }
+      if (seenUrls.has(a.url)) return false;
+      seenUrls.add(a.url);
       return true;
     });
 
@@ -842,7 +840,7 @@ export async function getArticles(period: string) {
     success: true,
     data: deduped,
     total: deduped.length,
-    session_count: sessions.length,
+    session_count: new Set(deduped.map(a => a.session_id)).size,
   };
 }
 
@@ -859,7 +857,12 @@ async function getStatsByPeriod(period: string) {
   const { data: sessions } = await sessionQuery;
   if (!sessions?.length) return { session_count: 0, article_count: 0, positive_pct: null };
 
-  const totalArticles = sessions.reduce((sum, s) => sum + (s.article_count || 0), 0);
+  const { count: totalArticles } = await supabase
+    .from('article_summaries')
+    .select('id', { count: 'exact', head: true })
+    .in('session_id', sessions.map(s => s.id))
+    .not('url', 'is', null)
+    .neq('url', '');
 
   const { data: keywords } = await supabase
     .from('keyword_stats')
@@ -871,7 +874,7 @@ async function getStatsByPeriod(period: string) {
 
   return {
     session_count: sessions.length,
-    article_count: totalArticles,
+    article_count: totalArticles || 0,
     positive_pct: total > 0 ? Math.round((pos / total) * 100) : null,
   };
 }
@@ -891,22 +894,25 @@ export async function getCategoryTotals(period: string) {
   const { data: sessions, error: sErr } = await sessionQuery;
   if (sErr || !sessions?.length) return { success: true, data: [] };
 
-  const { data: cats, error: cErr } = await supabase
-    .from('category_stats')
-    .select('category, count, avg_sentiment')
+  const { data: articles, error: aErr } = await supabase
+    .from('article_summaries')
+    .select('category, sentiment_score, url')
     .in('session_id', sessions.map(s => s.id));
 
-  if (cErr) return { success: false, error: cErr.message };
+  if (aErr) return { success: false, error: aErr.message };
 
   const map = new Map<string, { total: number; sentimentSum: number; sentimentCount: number }>();
-  for (const c of cats || []) {
-    const e = map.get(c.category) || { total: 0, sentimentSum: 0, sentimentCount: 0 };
-    e.total += c.count || 0;
-    if (c.avg_sentiment != null) {
-      e.sentimentSum += c.avg_sentiment;
+  for (const article of articles || []) {
+    const url = normalizeArticleUrl(article.url || '');
+    if (!url) continue;
+    const category = article.category || '기타';
+    const e = map.get(category) || { total: 0, sentimentSum: 0, sentimentCount: 0 };
+    e.total += 1;
+    if (article.sentiment_score != null) {
+      e.sentimentSum += Number(article.sentiment_score) || 0;
       e.sentimentCount++;
     }
-    map.set(c.category, e);
+    map.set(category, e);
   }
 
   const data = Array.from(map.entries())
@@ -982,14 +988,16 @@ export async function getLatestSession() {
           reason: rawTopic?.reason || '',
         };
       }),
-      summaries: (articles || []).map(a => ({
-        title: a.title,
-        summary: a.summary,
-        category: a.category,
-        url: a.url,
-        sentiment: a.sentiment,
-        sentimentScore: a.sentiment_score,
-      })),
+      summaries: (articles || [])
+        .filter(a => normalizeArticleUrl(a.url || ''))
+        .map(a => ({
+          title: a.title,
+          summary: a.summary,
+          category: a.category,
+          url: normalizeArticleUrl(a.url || ''),
+          sentiment: a.sentiment,
+          sentimentScore: a.sentiment_score,
+        })),
     },
   };
 }

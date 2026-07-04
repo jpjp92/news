@@ -29,8 +29,12 @@
   - 삭제된 일부 `category_stats`, `keyword_stats`는 `raw_data.data`에서 복구
 - 저장 로직 안정화
   - 중복 URL로 기사 insert가 생략된 경우 실제 insert 기사 수로 `article_count` 보정
+  - 원문 URL이 없는 기사는 저장·조회·기사 수 통계에서 제외
   - 실제 기사 수가 0건이면 category/keyword 통계 insert 생략
   - 중복 세션 판정과 history 조회 함수들이 `article_count > 0` 세션만 사용하도록 정리
+  - 카테고리 합계는 `category_stats` 대신 URL 있는 `article_summaries` 기준으로 집계
+- 기존 DB 데이터 보정
+  - 원문 URL이 없는 기사를 제외한 실제 URL 기사 수 기준으로 10개 세션의 `article_count` 재계산
 - Gemini 응답 안정화
   - `maxOutputTokens`를 6000에서 12000으로 상향
   - JSON 파싱 실패 시 다음 모델로 분석 재시도
