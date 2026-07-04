@@ -420,7 +420,6 @@ export function Analytics() {
                     <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-emerald-400" />
                     <span className="text-gray-700 dark:text-white/70 flex-1 line-clamp-1">{s.overall_trend}</span>
                     <span className="text-xs text-gray-400 dark:text-white/30 flex-shrink-0">{s.article_count}개</span>
-                    <span className="text-[10px] text-indigo-400/70 flex-shrink-0 hidden sm:block">{s.model_used?.replace('gemini-2.5-', 'g2.5-')}</span>
                   </div>
                 ))}
               </div>

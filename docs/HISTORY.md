@@ -41,6 +41,7 @@
 - Dashboard 빈 상태 설명 문구를 짧게 조정
 - `30일` 이후 데이터까지 확인할 수 있도록 Articles/Analytics 기간 탭과 history API에 `전체` 기간 추가
 - Analytics `오늘` 탭에서 keywords/sentiment API가 `today`를 허용하지 않아 400이 발생하던 문제 수정
+- Analytics 수집 세션 목록에서 행 끝의 모델명 표기 제거
 
 #### 검증
 
