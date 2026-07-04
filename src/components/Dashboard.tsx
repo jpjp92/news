@@ -103,7 +103,7 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
             <div className="min-w-0">
               <p className="text-xs md:text-sm font-semibold text-amber-800 dark:text-amber-300 truncate">표시할 분석 데이터가 아직 없습니다</p>
               <p className="text-[10px] md:text-xs text-amber-700/80 dark:text-amber-200/70 mt-0.5 line-clamp-1">
-                저장된 세션이 없거나 처음 접속한 경우입니다. 지금 바로 분석을 실행해보세요.
+                분석을 다시 실행해보세요.
               </p>
             </div>
             <button

@@ -2,6 +2,48 @@
 
 > 최근순 정렬
 
+## 2026-07-04
+
+### 뉴스 원문 링크 및 최근 DB 수집 데이터 정리
+
+#### 변경 파일
+
+- `src/lib/server/newsService.ts`
+- `src/components/Articles.tsx`
+- `src/components/Dashboard.tsx`
+
+#### 변경 내용
+
+- 네이버 섹션 수집 시 원문 기사 URL만 정규화해 저장하도록 수정
+  - 빈 URL, `#`, `search.naver.com`, `/search/` URL 제외
+  - 상대경로는 `https://news.naver.com` 기준으로 절대 URL 변환
+- Gemini 프롬프트 출력 스키마에서 `url` 요구 제거
+  - 모델이 임의 URL 또는 검색 URL을 만들지 않도록 변경
+  - 분석 결과 저장 전 수집 원본 `rawHeadlines` 기준으로 기사 URL을 다시 붙임
+- `Articles` 화면에서 URL이 없을 때 네이버 검색 링크로 이동하던 폴백 제거
+  - URL 없는 과거 데이터는 `원문 링크 없음`으로 표시
+- 최근 DB 데이터 점검 및 정리
+  - `article_summaries.url` 누락 건 중 `raw_data.rawHeadlines` 제목과 정확히 매칭되는 108건 백필
+  - 최근 데이터의 검색 URL 저장 건 0건 확인
+  - 실제 기사 행 수와 `news_sessions.article_count`가 어긋난 세션을 실제 행 수 기준으로 보정
+  - 삭제된 일부 `category_stats`, `keyword_stats`는 `raw_data.data`에서 복구
+- 저장 로직 안정화
+  - 중복 URL로 기사 insert가 생략된 경우 실제 insert 기사 수로 `article_count` 보정
+  - 실제 기사 수가 0건이면 category/keyword 통계 insert 생략
+  - 중복 세션 판정과 history 조회 함수들이 `article_count > 0` 세션만 사용하도록 정리
+- Gemini 응답 안정화
+  - `maxOutputTokens`를 6000에서 12000으로 상향
+  - JSON 파싱 실패 시 다음 모델로 분석 재시도
+- Dashboard 빈 상태 설명 문구를 짧게 조정
+- `30일` 이후 데이터까지 확인할 수 있도록 Articles/Analytics 기간 탭과 history API에 `전체` 기간 추가
+
+#### 검증
+
+- `npm run lint` 통과
+- 2026-07-03 이후 표시 대상 세션의 `article_count`와 실제 기사 행 수 불일치 0건 확인
+
+---
+
 ## 2026-06-29
 
 ### Header 스크롤 시각 부담 완화 및 탭 전환 UX 개선

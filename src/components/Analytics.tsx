@@ -4,7 +4,7 @@ import { TrendChart } from './TrendChart';
 import { BarChart3, TrendingUp, RefreshCw, AlertCircle, PieChart, Activity, Calendar, Repeat2, ChevronDown } from 'lucide-react';
 import { useNews } from '../context/NewsContext';
 
-type Period = 'current' | 'today' | '7d' | '30d';
+type Period = 'current' | 'today' | '7d' | '30d' | 'all';
 
 interface Session {
   id: string;
@@ -42,6 +42,7 @@ const PERIOD_LABELS: Record<Period, string> = {
   today: '오늘',
   '7d': '7일',
   '30d': '30일',
+  all: '전체',
 };
 
 function formatDate(iso: string) {

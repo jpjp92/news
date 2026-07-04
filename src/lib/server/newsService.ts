@@ -34,6 +34,8 @@ export interface NewsSettings {
   temperature?: number;
 }
 
+type CollectedHeadline = { title: string; url: string; expectedCategory?: string };
+
 const CATEGORY_MAP: Record<string, string> = {
   정치: '100',
   경제: '101',
@@ -75,6 +77,49 @@ let currentModelIndex = 0;
 
 function sanitizeText(text: string): string {
   return text.replace(/[\[\]"{}]/g, '').trim();
+}
+
+function normalizeHeadlineTitle(title: string): string {
+  return title.replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+function normalizeArticleUrl(rawUrl: string, baseUrl = 'https://news.naver.com'): string {
+  const value = String(rawUrl || '').trim();
+  if (!value || value === '#') return '';
+
+  try {
+    const url = new URL(value, baseUrl);
+    if (!['http:', 'https:'].includes(url.protocol)) return '';
+    if (url.hostname === 'search.naver.com') return '';
+    if (url.pathname.includes('/search/')) return '';
+    return url.toString();
+  } catch {
+    return '';
+  }
+}
+
+function attachCollectedUrls(analysis: NewsAnalysis, headlines: CollectedHeadline[]): NewsAnalysis {
+  const urlsByTitle = new Map<string, string[]>();
+  for (const headline of headlines) {
+    const key = normalizeHeadlineTitle(headline.title);
+    if (!key || !headline.url) continue;
+    const urls = urlsByTitle.get(key) || [];
+    urls.push(headline.url);
+    urlsByTitle.set(key, urls);
+  }
+
+  return {
+    ...analysis,
+    summaries: (analysis.summaries || []).map((summary, index) => {
+      const key = normalizeHeadlineTitle(summary.title);
+      const matchedUrl = urlsByTitle.get(key)?.shift();
+      const fallbackUrl = headlines[index]?.url;
+      return {
+        ...summary,
+        url: matchedUrl || fallbackUrl || undefined,
+      };
+    }),
+  };
 }
 
 function extractAndFixJson(text: string): any {
@@ -249,9 +294,19 @@ async function saveSessionToDb(
       }
     }
 
+    const actualArticleCount = filteredArticleRows.length;
+    if (actualArticleCount !== articleRows.length) {
+      const { error: countErr } = await supabase
+        .from('news_sessions')
+        .update({ article_count: actualArticleCount })
+        .eq('id', sessionId);
+
+      if (countErr) logger.error('[Supabase] Failed to update actual article_count', countErr.message);
+    }
+
     const inserts = [];
-    if (categoryRows.length) inserts.push(supabase.from('category_stats').insert(categoryRows));
-    if (keywordRows.length) inserts.push(supabase.from('keyword_stats').insert(keywordRows));
+    if (actualArticleCount > 0 && categoryRows.length) inserts.push(supabase.from('category_stats').insert(categoryRows));
+    if (actualArticleCount > 0 && keywordRows.length) inserts.push(supabase.from('keyword_stats').insert(keywordRows));
     if (filteredArticleRows.length) {
       inserts.push(supabase.from('article_summaries').insert(filteredArticleRows));
     }
@@ -264,6 +319,7 @@ async function saveSessionToDb(
     logger.info('[Supabase] Session saved', {
       sessionId,
       articles: articleRows.length,
+      insertedArticles: actualArticleCount,
       keywords: keywordRows.length,
       categories: categoryRows.length,
     });
@@ -282,6 +338,7 @@ async function isDuplicateSession(currentUrls: string[]): Promise<boolean> {
       .from('news_sessions')
       .select('raw_data')
       .eq('is_error', false)
+      .gt('article_count', 0)
       .order('collected_at', { ascending: false })
       .limit(1)
       .single();
@@ -365,7 +422,7 @@ async function callGeminiWithRetry(
           model: modelName,
           generationConfig: {
             ...(isGemini ? { responseMimeType: 'application/json' } : {}),
-            maxOutputTokens: 6000,
+            maxOutputTokens: 12000,
             temperature,
           },
         })
@@ -406,7 +463,7 @@ export async function analyzeNews(settings: NewsSettings = {}) {
     temperature,
   });
 
-  const headlines: { title: string; url: string; expectedCategory?: string }[] = [];
+  const headlines: CollectedHeadline[] = [];
 
   await Promise.all(
     sections.map(async section => {
@@ -435,13 +492,9 @@ export async function analyzeNews(settings: NewsSettings = {}) {
 
           const text = $(el).text().trim();
           const $a = $(el).closest('a');
-          let url = $a.attr('href') || '';
+          const url = normalizeArticleUrl($a.attr('href') || '');
 
-          if (url && !url.startsWith('http')) {
-            url = 'https://news.naver.com' + url;
-          }
-
-          if (text && !headlines.some(h => h.title === text)) {
+          if (text && url && !headlines.some(h => h.title === text)) {
             headlines.push({ title: text, url, expectedCategory: section.name });
             count++;
           }
@@ -533,17 +586,30 @@ ${topHeadlines
   "trendDrivers": ["..."],
   "categories": [{ "name": "...", "count": 1, "averageSentiment": 50, "dominantIssue": "..." }],
   "keyTopics": [{ "keyword": "...", "sentiment": "positive|negative|neutral", "score": 1, "reason": "..." }],
-  "summaries": [{ "title": "...", "summary": "...", "category": "...", "url": "...", "sentiment": "positive|negative|neutral", "sentimentScore": 50 }]
+  "summaries": [{ "title": "...", "summary": "...", "category": "...", "sentiment": "positive|negative|neutral", "sentimentScore": 50 }]
 }
 </output_schema>`;
 
-  const [isDuplicate, { text: responseText, modelUsed: currentModel, nextIndex }] = await Promise.all([
-    isDuplicateSession(topHeadlines.map(h => h.url)),
-    callGeminiWithRetry(prompt, temperature, currentModelIndex),
-  ]);
-  currentModelIndex = nextIndex;
+  const isDuplicate = await isDuplicateSession(topHeadlines.map(h => h.url));
+  let responseText = '';
+  let currentModel = GEMINI_MODELS[currentModelIndex] || 'unknown';
+  let analysis: any = null;
 
-  let analysis = extractAndFixJson(responseText);
+  for (let attempt = 0; attempt < Math.max(1, GEMINI_MODELS.length); attempt++) {
+    const result = await callGeminiWithRetry(prompt, temperature, currentModelIndex);
+    responseText = result.text;
+    currentModel = result.modelUsed;
+    currentModelIndex = result.nextIndex;
+    analysis = extractAndFixJson(responseText);
+
+    if (analysis) break;
+
+    logger.warn('[News] JSON parsing failed, retrying analysis model', {
+      model: currentModel,
+      attempt: attempt + 1,
+      preview: responseText.slice(0, 500),
+    });
+  }
 
   if (!analysis) {
     const errMsg = `JSON parsing failed for model ${currentModel}`;
@@ -573,6 +639,7 @@ ${topHeadlines
     };
   } else {
     analysis = normalizeAnalysis(analysis);
+    analysis = attachCollectedUrls(analysis, topHeadlines);
 
     if (!isDuplicate) {
       await saveSessionToDb(analysis, currentModel, { data: analysis, rawHeadlines: topHeadlines }, false);
@@ -596,14 +663,15 @@ ${topHeadlines
 export async function getSessions(period: string) {
   if (!supabase) return { success: false, error: 'DB not connected' };
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('news_sessions')
     .select('id, collected_at, article_count, model_used, is_error, overall_trend')
     .eq('is_error', false)
     .gt('article_count', 0)
-    .gte('collected_at', getPeriodStart(period || '7d'))
     .order('collected_at', { ascending: false });
+  if (period !== 'all') query = query.gte('collected_at', getPeriodStart(period || '7d'));
 
+  const { data, error } = await query;
   if (error) return { success: false, error: error.message };
   return { success: true, data: data || [] };
 }
@@ -611,12 +679,14 @@ export async function getSessions(period: string) {
 export async function getKeywords(period: string) {
   if (!supabase) return { success: false, error: 'DB not connected' };
 
-  const { data: sessions, error: sErr } = await supabase
+  let sessionQuery = supabase
     .from('news_sessions')
     .select('id')
     .eq('is_error', false)
-    .gte('collected_at', getPeriodStart(period || '7d'));
+    .gt('article_count', 0);
+  if (period !== 'all') sessionQuery = sessionQuery.gte('collected_at', getPeriodStart(period || '7d'));
 
+  const { data: sessions, error: sErr } = await sessionQuery;
   if (sErr || !sessions?.length) return { success: true, data: [] };
 
   const { data: keywords, error: kErr } = await supabase
@@ -661,13 +731,15 @@ export async function getKeywords(period: string) {
 export async function getSentiment(period: string) {
   if (!supabase) return { success: false, error: 'DB not connected' };
 
-  const { data: sessions } = await supabase
+  let sessionQuery = supabase
     .from('news_sessions')
     .select('id, collected_at')
     .eq('is_error', false)
-    .gte('collected_at', getPeriodStart(period || '7d'))
+    .gt('article_count', 0)
     .order('collected_at', { ascending: true });
+  if (period !== 'all') sessionQuery = sessionQuery.gte('collected_at', getPeriodStart(period || '7d'));
 
+  const { data: sessions } = await sessionQuery;
   if (!sessions?.length) return { success: true, data: [] };
 
   const { data: keywords } = await supabase
@@ -721,13 +793,15 @@ export async function getSentiment(period: string) {
 export async function getArticles(period: string) {
   if (!supabase) return { success: false, error: 'DB not connected' };
 
-  const { data: sessions, error: sErr } = await supabase
+  let sessionQuery = supabase
     .from('news_sessions')
     .select('id, collected_at')
     .eq('is_error', false)
-    .gte('collected_at', getPeriodStart(period || 'today'))
+    .gt('article_count', 0)
     .order('collected_at', { ascending: false });
+  if (period !== 'all') sessionQuery = sessionQuery.gte('collected_at', getPeriodStart(period || 'today'));
 
+  const { data: sessions, error: sErr } = await sessionQuery;
   if (sErr || !sessions?.length) {
     return { success: true, data: [], total: 0, session_count: 0 };
   }
@@ -775,12 +849,14 @@ export async function getArticles(period: string) {
 async function getStatsByPeriod(period: string) {
   if (!supabase) return { session_count: 0, article_count: 0, positive_pct: null };
 
-  const { data: sessions } = await supabase
+  let sessionQuery = supabase
     .from('news_sessions')
     .select('id, article_count')
     .eq('is_error', false)
-    .gte('collected_at', getPeriodStart(period));
+    .gt('article_count', 0);
+  if (period !== 'all') sessionQuery = sessionQuery.gte('collected_at', getPeriodStart(period));
 
+  const { data: sessions } = await sessionQuery;
   if (!sessions?.length) return { session_count: 0, article_count: 0, positive_pct: null };
 
   const totalArticles = sessions.reduce((sum, s) => sum + (s.article_count || 0), 0);
@@ -809,7 +885,7 @@ export async function getStats() {
 export async function getCategoryTotals(period: string) {
   if (!supabase) return { success: false, error: 'DB not connected' };
 
-  let sessionQuery = supabase.from('news_sessions').select('id').eq('is_error', false);
+  let sessionQuery = supabase.from('news_sessions').select('id').eq('is_error', false).gt('article_count', 0);
   if (period !== 'all') sessionQuery = sessionQuery.gte('collected_at', getPeriodStart(period));
 
   const { data: sessions, error: sErr } = await sessionQuery;
@@ -851,6 +927,7 @@ export async function getLatestSession() {
     .from('news_sessions')
     .select('id, overall_trend, model_used, collected_at, raw_data')
     .eq('is_error', false)
+    .gt('article_count', 0)
     .order('collected_at', { ascending: false })
     .limit(1)
     .single();

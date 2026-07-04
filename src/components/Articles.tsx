@@ -3,7 +3,7 @@ import { GlassCard } from './GlassCard';
 import { FileText, ExternalLink, RefreshCw, AlertCircle, Smile, Meh, Frown, Activity, Database } from 'lucide-react';
 import { useNews } from '../context/NewsContext';
 
-type Period = 'session' | 'today' | '7d' | '30d';
+type Period = 'session' | 'today' | '7d' | '30d' | 'all';
 type SortOrder = 'newest' | 'oldest';
 
 interface DbArticle {
@@ -24,6 +24,7 @@ const PERIOD_LABELS: Record<Period, string> = {
   today: '오늘',
   '7d': '7일',
   '30d': '30일',
+  all: '전체',
 };
 
 export function Articles() {
@@ -171,7 +172,7 @@ export function Articles() {
       </div>
 
       {/* 기간 탭 */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         {(Object.keys(PERIOD_LABELS) as Period[]).map(p => (
           <button
             key={p}
@@ -328,14 +329,20 @@ export function Articles() {
                 {highlightText(article.summary, searchQuery)}
               </p>
               <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 flex justify-end">
-                <a
-                  href={article.url || `https://search.naver.com/search.naver?where=news&query=${encodeURIComponent(article.title)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-xs font-medium flex items-center gap-1 transition-colors"
-                >
-                  원문 보기 <ExternalLink size={12} />
-                </a>
+                {article.url ? (
+                  <a
+                    href={article.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-xs font-medium flex items-center gap-1 transition-colors"
+                  >
+                    원문 보기 <ExternalLink size={12} />
+                  </a>
+                ) : (
+                  <span className="text-gray-400 dark:text-slate-500 text-xs font-medium">
+                    원문 링크 없음
+                  </span>
+                )}
               </div>
             </GlassCard>
           ))}
