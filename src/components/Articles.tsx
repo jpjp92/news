@@ -157,7 +157,7 @@ export function Articles() {
             {isDbMode
               ? useCurrentSessionFallback
                 ? <><Database size={12} className="inline mr-1" />오늘 DB 기사 없음 · 현재 세션 {rawArticles.length}개 기사 표시</>
-                : <><Database size={12} className="inline mr-1" />{sessionCount}개 세션 수집 · 총 {rawArticles.length}개 기사 (중복 제거)</>
+                : <><Database size={12} className="inline mr-1" />{sessionCount}개 세션 수집 · 총 {rawArticles.length}개 기사</>
               : '현재 세션 실시간 분석 결과'}
           </p>
         </div>

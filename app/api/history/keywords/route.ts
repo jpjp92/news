@@ -5,7 +5,7 @@ import { logger } from '@/src/lib/server/logger';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const VALID_PERIODS = new Set(['7d', '30d', 'all']);
+const VALID_PERIODS = new Set(['today', '7d', '30d', 'all']);
 
 export async function GET(request: Request) {
   try {

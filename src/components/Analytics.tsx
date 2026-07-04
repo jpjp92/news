@@ -104,6 +104,7 @@ export function Analytics() {
       .catch((err) => {
         const status = err?.status;
         if (status === 429) setHistError('요청 한도에 도달했습니다. 잠시 후 다시 시도해주세요.');
+        else if (status === 400) setHistError('지원하지 않는 기간 조건입니다. 다른 기간을 선택해주세요.');
         else if (status >= 500) setHistError('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
         else setHistError('네트워크 연결을 확인해주세요.');
       })
