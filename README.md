@@ -94,6 +94,7 @@ npm run start
 
 - Light mode: 순백 배경 대신 웜 그레이/페이퍼 톤을 사용해 장시간 모니터링 피로도를 낮춤
 - Dark mode: 기존 navy/indigo 중심 톤을 줄이고 깊은 차콜 배경과 muted amber/teal accent 사용
+- Theme init: 저장된 light/dark mode를 첫 페인트 전에 적용해 새로고침 시 테마 깜빡임을 방지
 - Glass/gradient: 전체 화면 장식보다 Header, KPI, 핵심 요약 영역에만 제한적으로 적용
 - 정보 구조: 카드 라운드와 그림자를 낮추고, 보더·여백·타이포 위계로 기사/통계/분석 데이터를 우선 노출
 - 탐색 구조: Header는 전역 액션 중심으로 가볍게 유지하고, 검색/최근 검색어는 Sidebar에 배치

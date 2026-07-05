@@ -78,7 +78,7 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
           <p className="text-xs md:text-sm text-[#514c44] dark:text-white/70 flex items-center gap-1 flex-wrap mt-2">
             네이버 뉴스 AI 기반 인사이트
             {modelUsed && <span className="px-1.5 py-0.5 bg-white/45 dark:bg-white/[0.08] text-[#6f6a60] dark:text-[#d8d2c8] rounded-md text-[10px] md:text-xs font-medium border border-white/60 dark:border-white/10 shrink-0">{modelUsed}</span>}
-            {collectedAt && <span className="text-[10px] md:text-xs text-gray-400 dark:text-white/30 shrink-0">{new Date(collectedAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })} 수집</span>}
+            {collectedAt && <span className="text-[10px] md:text-xs text-gray-400 dark:text-white/30 shrink-0">{new Date(collectedAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' })} 수집</span>}
           </p>
         </div>
         <button 

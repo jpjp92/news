@@ -22,6 +22,7 @@ body {
   @apply transition-colors duration-300 antialiased;
   font-family: var(--font-sans);
   color: var(--dash-text);
+  background: var(--dash-bg);
 }
 
 * {
@@ -103,6 +104,24 @@ body {
     radial-gradient(ellipse at top left, rgba(76, 91, 84, 0.42) 0%, transparent 58%),
     radial-gradient(ellipse at bottom right, rgba(111, 66, 58, 0.32) 0%, transparent 56%),
     linear-gradient(160deg, #111316 0%, #1b1a17 100%);
+}
+
+.dark body {
+  color: #f2eee7;
+  background: #111316;
+}
+
+.dark .warm-bg {
+  background:
+    radial-gradient(ellipse at top left, rgba(76, 91, 84, 0.42) 0%, transparent 58%),
+    radial-gradient(ellipse at bottom right, rgba(111, 66, 58, 0.32) 0%, transparent 56%),
+    linear-gradient(160deg, #111316 0%, #1b1a17 100%);
+}
+
+.dark .orb-light-1,
+.dark .orb-light-2,
+.dark .orb-light-3 {
+  display: none;
 }
 
 .orb {

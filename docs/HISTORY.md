@@ -4,6 +4,28 @@
 
 ## 2026-07-05
 
+### 다크모드 초기 깜빡임 방지
+
+#### 변경 파일
+
+- `app/layout.tsx`
+- `app/globals.css`
+- `src/index.css`
+
+#### 변경 내용
+
+- React 하이드레이션 전에 `localStorage.news-dash-theme`를 읽는 초기 테마 스크립트 추가
+- 저장된 테마가 없으면 `prefers-color-scheme` 기준으로 초기 테마 결정
+- 첫 페인트 전에 `html.dark`, `data-theme`, `color-scheme`을 적용해 다크모드 저장 상태에서 라이트모드가 잠깐 보이는 현상 완화
+- SSR에서 `warm-bg`가 잠깐 남아도 `.dark .warm-bg`가 다크 배경으로 보이도록 CSS fallback 추가
+- 다크모드에서 light orb가 노출되지 않도록 CSS fallback 추가
+
+#### 검증
+
+- `npm run lint` 통과
+
+---
+
 ### Sidebar 날씨 탭 및 도시명 정규화
 
 #### 변경 파일
