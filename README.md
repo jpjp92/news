@@ -12,6 +12,7 @@ Next.js 기반 AI 뉴스 트렌드 대시보드입니다. 네이버 뉴스 섹�
 - 날씨 탭: OpenWeather 기반 현재 날씨와 5일 예보를 표시하고, 주요 한글 도시명을 영문/국가 코드로 정규화
 - Supabase 저장: 세션, 카테고리 통계, 키워드 통계, 기사 요약 분리 저장
 - 반응형 UI: 대시보드, 핵심 분석, 최신뉴스, 날씨, 설정 화면 제공 및 탭 전환 시 스크롤 위치 초기화
+- Sidebar 검색: 키워드 입력 또는 최근 검색어 선택 시 최신뉴스 탭으로 이동해 관련 기사 필터링
 - 하이브리드 UI: 웜 그레이 기반의 Swiss 정보 구조와 절제된 glass/gradient 포인트를 light/dark mode에 적용
 - 로컬 감성 분류 모델 학습: 누적된 기사 데이터로 한국어 감성 분류 모델(KLUE-RoBERTa 등)을 Colab에서 파인튜닝 (`colab_training/`)
 
@@ -50,9 +51,7 @@ src/
   lib/server/
     newsService.ts                 # 수집, 분석, DB 저장/조회 비즈니스 로직
     logger.ts                      # 서버 로그 유틸
-scripts/
-  dev.mjs                          # 3000 포트 고정 개발 서버 실행
-  migrate-supabase.mjs             # Supabase 스키마 마이그레이션 (git 제외)
+scripts/                           # 로컬 전용 스크립트 폴더 (git 제외)
 colab_training/                    # 감성 분류 모델 학습 파이프라인 (Colab T4)
   train_sentiment.py               # KLUE-RoBERTa 파인튜닝 본 스크립트
   test_electra.py                  # 백본 비교 실험 (ELECTRA/FinBert/kf-deberta 등)
@@ -74,7 +73,7 @@ npm install
 npm run dev
 ```
 
-개발 서버는 기본적으로 `http://localhost:3000`에서 실행됩니다. `scripts/dev.mjs`가 포트 충돌을 먼저 검사하므로 3000 포트가 이미 사용 중이면 서버를 시작하지 않고 실패합니다. 다른 포트를 쓰려면 `PORT=3001 npm run dev`처럼 환경변수로 지정합니다.
+개발 서버는 기본적으로 `http://localhost:3000`에서 실행됩니다. 다른 포트를 쓰려면 `PORT=3001 npm run dev`처럼 환경변수로 지정합니다.
 
 ## 빌드와 검증
 
@@ -98,6 +97,8 @@ npm run start
 - Glass/gradient: 전체 화면 장식보다 Header, KPI, 핵심 요약 영역에만 제한적으로 적용
 - 정보 구조: 카드 라운드와 그림자를 낮추고, 보더·여백·타이포 위계로 기사/통계/분석 데이터를 우선 노출
 - 탐색 구조: Header는 전역 액션 중심으로 가볍게 유지하고, 검색/최근 검색어는 Sidebar에 배치
+- 검색 UX: Sidebar 검색 제출과 최근 검색어 선택은 최신뉴스 탭으로 이동하며, 검색어 상태와 해제 액션을 최신뉴스 필터 영역에 표시
+- 모바일 Sidebar: 닫기 버튼은 `X` 대신 Sidebar 닫기 아이콘을 사용해 데스크톱 탐색과 일관성 유지
 - 로컬 디자인 샘플: `public/hybrid-dashboard-sample.html`은 실험용 파일이며 `.gitignore`로 제외
 
 ## 환경 변수
@@ -167,7 +168,7 @@ Supabase에는 다음 테이블 구성을 전제로 저장합니다.
 
 현재 `trendDrivers`, `dominantIssue`, `reason` 같은 확장 필드는 별도 컬럼이 아니라 `news_sessions.raw_data.data`에서 복원합니다.
 
-스키마 마이그레이션은 `scripts/migrate-supabase.mjs`로 수행합니다.
+스키마 마이그레이션은 로컬 전용 `scripts/` 폴더에서 수행합니다. 이 폴더는 `.gitignore`로 제외합니다.
 
 ```bash
 npm run db:migrate:dry-run   # 적용 없이 변경 내역만 출력

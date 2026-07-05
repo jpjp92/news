@@ -51,6 +51,17 @@ rankScore = appearance_count * 0.5 + avg_score * 0.4 + recencyScore * 0.1;
 - `src/lib/server/newsService.ts`
 - `src/components/Articles.tsx`
 
+### [Planned] 최신뉴스 서버 검색 고도화
+
+현재 Sidebar 검색은 전역 검색어를 설정한 뒤 최신뉴스 탭에서 로드된 기사 목록을 클라이언트 필터링한다. 데이터가 많아지면 서버에서 검색어를 받아 필요한 기사만 조회하는 방식이 필요하다.
+
+구현 후보:
+
+- `GET /api/history/articles?period=today|7d|30d|all&q=...` 지원
+- 제목, 요약, 카테고리 기준 검색
+- 검색어가 있을 때는 최신뉴스 진입 시 기본 기간을 `today`로 유지할지 `all`로 확장할지 UX 검토
+- 검색 결과 수와 적용 기간을 UI에 명확히 표시
+
 ## Medium Priority
 
 ### [Planned] 날씨 도시명 정규화 Gemini fallback

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { GlassCard } from './GlassCard';
-import { FileText, ExternalLink, RefreshCw, AlertCircle, Smile, Meh, Frown, Activity, Database } from 'lucide-react';
+import { FileText, ExternalLink, RefreshCw, AlertCircle, Smile, Meh, Frown, Activity, Database, X } from 'lucide-react';
 import { useNews } from '../context/NewsContext';
 
 type Period = 'session' | 'today' | '7d' | '30d' | 'all';
@@ -28,7 +28,7 @@ const PERIOD_LABELS: Record<Period, string> = {
 };
 
 export function Articles() {
-  const { data, loading: sessionLoading, error: sessionError, fetchData, searchQuery, sentimentFilter, setSentimentFilter } = useNews();
+  const { data, loading: sessionLoading, error: sessionError, fetchData, searchQuery, setSearchQuery, sentimentFilter, setSentimentFilter } = useNews();
 
   const [period, setPeriod] = useState<Period>('today');
   const [dbArticles, setDbArticles] = useState<DbArticle[]>([]);
@@ -135,10 +135,12 @@ export function Articles() {
   }, [currentPage, totalPages]);
 
   const highlightText = (text: string, query: string) => {
-    if (!query.trim()) return text;
-    const parts = text.split(new RegExp(`(${query})`, 'gi'));
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) return text;
+    const escapedQuery = trimmedQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const parts = text.split(new RegExp(`(${escapedQuery})`, 'gi'));
     return parts.map((part, i) =>
-      part.toLowerCase() === query.toLowerCase()
+      part.toLowerCase() === trimmedQuery.toLowerCase()
         ? <span key={i} className="bg-[#c83a32]/15 dark:bg-[#d7a36f]/18 text-[#c83a32] dark:text-[#d7a36f] px-0.5 rounded font-bold">{part}</span>
         : part
     );
@@ -205,6 +207,23 @@ export function Articles() {
 
       {!loading && rawArticles.length > 0 && (
         <GlassCard className="p-3">
+          {searchQuery.trim() && (
+            <>
+              <div className="mb-2.5 flex items-center justify-between gap-3 rounded-lg bg-[#ebe8df]/70 dark:bg-white/[0.045] border border-[#ded9cf] dark:border-white/10 px-3 py-2">
+                <p className="min-w-0 truncate text-xs text-gray-600 dark:text-white/60">
+                  검색어 <span className="font-bold text-[#202326] dark:text-[#f2eee7]">"{searchQuery.trim()}"</span> 관련 기사
+                </p>
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="flex flex-shrink-0 items-center gap-1 text-[11px] font-medium text-[#c83a32] dark:text-[#d7a36f] hover:text-[#9f2f2a] dark:hover:text-[#e0b481]"
+                >
+                  <X size={12} />
+                  해제
+                </button>
+              </div>
+              <div className="border-t border-black/5 dark:border-white/10 mb-2.5" />
+            </>
+          )}
           <div className="flex items-center gap-1.5 mb-2.5 min-w-0">
             <span className="text-[10px] font-bold text-gray-400 dark:text-white/30 uppercase w-10 flex-shrink-0">카테고리</span>
             <div className="flex gap-1 overflow-x-auto flex-1 min-w-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">

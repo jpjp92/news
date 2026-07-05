@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { LayoutDashboard, Newspaper, TrendingUp, Settings, PanelLeftClose, PanelLeftOpen, X, Search, History, CloudSun } from 'lucide-react';
+import { LayoutDashboard, Newspaper, TrendingUp, Settings, PanelLeftClose, PanelLeftOpen, Search, History, CloudSun } from 'lucide-react';
 import { GlassCard } from './GlassCard';
 import { useNews } from '../context/NewsContext';
 
@@ -34,11 +34,11 @@ export function Sidebar({ activeTab = 'dashboard', setActiveTab = () => {}, isOp
                 className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-gray-100/50 dark:hover:bg-slate-700/50 transition-colors"
                 title="사이드바 닫기"
               >
-                <X size={20} />
+                <PanelLeftClose size={20} />
               </button>
             </div>
             <div className="flex-1 px-4 py-4">
-              <div className="mb-5"><SidebarSearch /></div>
+              <div className="mb-5"><SidebarSearch onSubmit={() => handleNav('articles')} /></div>
               <p className="text-xs font-semibold text-gray-500 dark:text-white/40 uppercase tracking-wider mb-3 px-2">메뉴</p>
               <nav className="space-y-1">
                 <NavItem icon={<LayoutDashboard size={20} />} label="대시보드" active={activeTab === 'dashboard'} onClick={() => handleNav('dashboard')} isOpen />
@@ -76,7 +76,7 @@ export function Sidebar({ activeTab = 'dashboard', setActiveTab = () => {}, isOp
           )}
         </div>
         <div className="px-4 py-2 flex-1 mt-2">
-          {isOpen && <div className="mb-5"><SidebarSearch /></div>}
+          {isOpen && <div className="mb-5"><SidebarSearch onSubmit={() => setActiveTab('articles')} /></div>}
           {isOpen && <p className="text-xs font-semibold text-gray-500 dark:text-white/40 uppercase tracking-wider mb-4 px-2">메뉴</p>}
           <nav className="space-y-2">
             <NavItem icon={<LayoutDashboard size={20} />} label="대시보드" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} isOpen={isOpen} />
@@ -93,7 +93,7 @@ export function Sidebar({ activeTab = 'dashboard', setActiveTab = () => {}, isOp
   );
 }
 
-function SidebarSearch() {
+function SidebarSearch({ onSubmit }: { onSubmit: () => void }) {
   const { searchQuery, setSearchQuery, recentSearches, addRecentSearch, clearRecentSearches } = useNews();
   const [searchFocused, setSearchFocused] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -108,25 +108,33 @@ function SidebarSearch() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      addRecentSearch(searchQuery);
-      setSearchFocused(false);
-    }
+  const submitSearch = (term: string) => {
+    const normalizedTerm = term.trim();
+    if (!normalizedTerm) return;
+    setSearchQuery(normalizedTerm);
+    addRecentSearch(normalizedTerm);
+    setSearchFocused(false);
+    onSubmit();
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    submitSearch(searchQuery);
   };
 
   return (
     <div className="relative" ref={searchRef}>
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8a8479] dark:text-[#8f8a80]" size={17} />
-      <input
-        type="text"
-        placeholder="뉴스 검색"
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        onFocus={() => setSearchFocused(true)}
-        onKeyDown={handleSearchKeyDown}
-        className="w-full h-10 bg-[#f2f0ea]/70 dark:bg-[#111316]/58 border border-[#ded9cf] dark:border-white/10 rounded-lg pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#c83a32]/20 focus:border-[#b7ada0] dark:focus:border-[#ba9a74]/60 placeholder-[#8a8479] dark:placeholder-[#8f8a80] text-[#202326] dark:text-[#f2eee7]"
-      />
+      <form onSubmit={handleSearchSubmit}>
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8a8479] dark:text-[#8f8a80]" size={17} />
+        <input
+          type="search"
+          placeholder="뉴스 검색"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onFocus={() => setSearchFocused(true)}
+          className="w-full h-10 bg-[#f2f0ea]/70 dark:bg-[#111316]/58 border border-[#ded9cf] dark:border-white/10 rounded-lg pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#c83a32]/20 focus:border-[#b7ada0] dark:focus:border-[#ba9a74]/60 placeholder-[#8a8479] dark:placeholder-[#8f8a80] text-[#202326] dark:text-[#f2eee7]"
+        />
+      </form>
       {searchFocused && recentSearches.length > 0 && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-[#fbfaf6]/95 dark:bg-[#191a18]/94 backdrop-blur-xl border border-[#ded9cf] dark:border-white/10 rounded-xl shadow-xl overflow-hidden z-30">
           <div className="p-3 border-b border-gray-100 dark:border-white/10 flex justify-between items-center">
@@ -143,8 +151,7 @@ function SidebarSearch() {
               <button
                 key={i}
                 onClick={() => {
-                  setSearchQuery(term);
-                  setSearchFocused(false);
+                  submitSearch(term);
                 }}
                 className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-[#ebe8df] dark:hover:bg-white/[0.06] flex items-center gap-2 transition-colors"
               >
