@@ -92,6 +92,7 @@ npm run start
 - Dark mode: 기존 navy/indigo 중심 톤을 줄이고 깊은 차콜 배경과 muted amber/teal accent 사용
 - Glass/gradient: 전체 화면 장식보다 Header, KPI, 핵심 요약 영역에만 제한적으로 적용
 - 정보 구조: 카드 라운드와 그림자를 낮추고, 보더·여백·타이포 위계로 기사/통계/분석 데이터를 우선 노출
+- 탐색 구조: Header는 전역 액션 중심으로 가볍게 유지하고, 검색/최근 검색어는 Sidebar에 배치
 - 로컬 디자인 샘플: `public/hybrid-dashboard-sample.html`은 실험용 파일이며 `.gitignore`로 제외
 
 ## 환경 변수

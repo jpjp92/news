@@ -31,6 +31,10 @@
 - Dark mode를 deep navy 중심에서 차콜 배경 + muted amber/teal accent로 변경
 - scrollbar와 orb 색상도 새 팔레트에 맞춰 조정
 - 로컬 디자인 샘플 `public/hybrid-dashboard-sample.html`을 `.gitignore`에 추가
+- Header에 있던 뉴스 검색창과 최근 검색어 드롭다운을 Sidebar로 이동
+  - Header는 모바일 메뉴 버튼과 테마 토글 중심으로 단순화
+  - Sidebar가 열린 상태와 모바일 드로어에서 검색창 표시
+  - 기존 검색어 상태, Enter 저장, 최근 검색어 선택/초기화 동작 유지
 
 #### 검증
 

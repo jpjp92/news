@@ -1,6 +1,7 @@
-import React from 'react';
-import { LayoutDashboard, Newspaper, TrendingUp, Settings, PanelLeftClose, PanelLeftOpen, X } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { LayoutDashboard, Newspaper, TrendingUp, Settings, PanelLeftClose, PanelLeftOpen, X, Search, History } from 'lucide-react';
 import { GlassCard } from './GlassCard';
+import { useNews } from '../context/NewsContext';
 
 interface SidebarProps {
   activeTab?: string;
@@ -37,6 +38,7 @@ export function Sidebar({ activeTab = 'dashboard', setActiveTab = () => {}, isOp
               </button>
             </div>
             <div className="flex-1 px-4 py-4">
+              <div className="mb-5"><SidebarSearch /></div>
               <p className="text-xs font-semibold text-gray-500 dark:text-white/40 uppercase tracking-wider mb-3 px-2">메뉴</p>
               <nav className="space-y-1">
                 <NavItem icon={<LayoutDashboard size={20} />} label="대시보드" active={activeTab === 'dashboard'} onClick={() => handleNav('dashboard')} isOpen />
@@ -73,6 +75,7 @@ export function Sidebar({ activeTab = 'dashboard', setActiveTab = () => {}, isOp
           )}
         </div>
         <div className="px-4 py-2 flex-1 mt-2">
+          {isOpen && <div className="mb-5"><SidebarSearch /></div>}
           {isOpen && <p className="text-xs font-semibold text-gray-500 dark:text-white/40 uppercase tracking-wider mb-4 px-2">메뉴</p>}
           <nav className="space-y-2">
             <NavItem icon={<LayoutDashboard size={20} />} label="대시보드" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} isOpen={isOpen} />
@@ -85,6 +88,72 @@ export function Sidebar({ activeTab = 'dashboard', setActiveTab = () => {}, isOp
         </div>
       </GlassCard>
     </>
+  );
+}
+
+function SidebarSearch() {
+  const { searchQuery, setSearchQuery, recentSearches, addRecentSearch, clearRecentSearches } = useNews();
+  const [searchFocused, setSearchFocused] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setSearchFocused(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      addRecentSearch(searchQuery);
+      setSearchFocused(false);
+    }
+  };
+
+  return (
+    <div className="relative" ref={searchRef}>
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8a8479] dark:text-[#8f8a80]" size={17} />
+      <input
+        type="text"
+        placeholder="뉴스 검색"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        onFocus={() => setSearchFocused(true)}
+        onKeyDown={handleSearchKeyDown}
+        className="w-full h-10 bg-[#f2f0ea]/70 dark:bg-[#111316]/58 border border-[#ded9cf] dark:border-white/10 rounded-lg pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#c83a32]/20 focus:border-[#b7ada0] dark:focus:border-[#ba9a74]/60 placeholder-[#8a8479] dark:placeholder-[#8f8a80] text-[#202326] dark:text-[#f2eee7]"
+      />
+      {searchFocused && recentSearches.length > 0 && (
+        <div className="absolute top-full left-0 right-0 mt-2 bg-[#fbfaf6]/95 dark:bg-[#191a18]/94 backdrop-blur-xl border border-[#ded9cf] dark:border-white/10 rounded-xl shadow-xl overflow-hidden z-30">
+          <div className="p-3 border-b border-gray-100 dark:border-white/10 flex justify-between items-center">
+            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">최근 검색어</span>
+            <button
+              onClick={(e) => { e.stopPropagation(); clearRecentSearches(); }}
+              className="text-[10px] text-[#c83a32] dark:text-[#d7a36f] hover:underline"
+            >
+              모두 지우기
+            </button>
+          </div>
+          <div className="max-h-48 overflow-y-auto">
+            {recentSearches.map((term, i) => (
+              <button
+                key={i}
+                onClick={() => {
+                  setSearchQuery(term);
+                  setSearchFocused(false);
+                }}
+                className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-[#ebe8df] dark:hover:bg-white/[0.06] flex items-center gap-2 transition-colors"
+              >
+                <History size={14} className="text-gray-400" />
+                <span className="truncate">{term}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
