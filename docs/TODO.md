@@ -64,9 +64,9 @@ rankScore = appearance_count * 0.5 + avg_score * 0.4 + recencyScore * 0.1;
 
 ## Medium Priority
 
-### [Planned] 날씨 API KMA/OpenWeather 하이브리드 전환
+### [Done] 날씨 API KMA/OpenWeather 하이브리드 전환
 
-현재 날씨 탭은 OpenWeather 기반이다. 2026-07-05 로컬 검증 결과, 한국 도시는 기상청 API(KMA), 해외 도시는 OpenWeather를 사용하는 하이브리드 구조가 적합하다.
+2026-07-05 로컬 검증 결과를 바탕으로, 한국 도시는 기상청 API(KMA), 해외 도시는 OpenWeather를 사용하는 하이브리드 구조를 적용했다.
 
 구현 정책:
 
@@ -85,15 +85,17 @@ rankScore = appearance_count * 0.5 + avg_score * 0.4 + recencyScore * 0.1;
 - `getVilageFcst`가 주요 병목이며 약 1.2초
 - 단기예보만으로 서울 기준 5~6일치 예보 확보 가능
 - 전체 KMA 풀 조합도 병렬 호출 시 약 1.2초였지만 호출 수가 많아 초기 구현에는 과함
-- KMA는 기압, 가시거리, 돌풍 값이 부족하므로 UI에서 `-` 표시 보정 필요
+- KMA와 OpenWeather 공통성이 낮은 기압, 가시거리, 돌풍은 기본 지표에서 제외
 
-구현 범위:
+적용 범위:
 
 - `app/api/weather/route.ts`에 KMA provider 추가
-- 국내 도시 alias에 `nx`, `ny`, `shortRegId`, `midTempRegId`, `midLandRegId`, `midStnId`, `openWeatherQuery` 추가
-- KMA category 코드(`T1H`, `TMP`, `SKY`, `PTY`, `POP`, `REH`, `WSD`, `TMN`, `TMX`)를 UI 필드로 변환
+- 국내 도시 alias에 `nx`, `ny`, `shortRegId`, `stnId`, `openWeatherQuery` 추가
+- KMA category 코드(`T1H`, `TMP`, `SKY`, `PTY`, `POP`, `REH`, `WSD`, `TMN`, `TMX`, `PCP`, `SNO`)를 UI 필드로 변환
 - `source`에 `KMA` 또는 `OpenWeather` 표시
-- KMA 값 없음 필드의 UI 표시 보정
+- 상세 지표는 습도, 풍속, 강수, 강수확률, 구름, 체감온도 중심으로 구성
+- 날씨 탭 기본 도시는 `서울`
+- 5일 예보 날짜는 `7/5 (일)` 형식으로 요일 포함
 
 ### [Planned] 날씨 도시명 정규화 Gemini fallback
 

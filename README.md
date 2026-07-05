@@ -9,7 +9,7 @@ Next.js 기반 AI 뉴스 트렌드 대시보드입니다. 네이버 뉴스 섹�
 - 최신 세션 자동 로드: 저장된 최신 정상 세션을 먼저 보여주고, 없으면 1회 자동 분석
 - 히스토리 분석: 오늘, 7일, 30일, 전체 기준 세션/키워드/감성/기사 조회
 - 기간 비교 분석: 오늘/7일/30일 데이터를 직전 동일 기간과 비교해 기사 수, 감성 비율, 신규·급상승·소멸 키워드 표시
-- 날씨 탭: 현재는 OpenWeather 기반 현재 날씨와 5일 예보를 표시하며, KMA 하이브리드 전환을 검증 중
+- 날씨 탭: 한국 도시는 KMA 우선, 해외 도시는 OpenWeather 기반 현재 날씨와 5일 예보 표시. 기본 도시는 `서울`이며 예보 날짜는 요일을 함께 표시
 - Supabase 저장: 세션, 카테고리 통계, 키워드 통계, 기사 요약 분리 저장
 - 반응형 UI: 대시보드, 핵심 분석, 최신뉴스, 날씨, 설정 화면 제공 및 탭 전환 시 스크롤 위치 초기화
 - Sidebar 검색: 키워드 입력 또는 최근 검색어 선택 시 최신뉴스 탭으로 이동해 관련 기사 필터링
@@ -29,13 +29,14 @@ Next.js 기반 AI 뉴스 트렌드 대시보드입니다. 네이버 뉴스 섹�
 ## 프로젝트 구조
 
 ```text
+dev.mjs                          # 개발 서버 실행 래퍼, 기본 포트 충돌 시 다음 포트 자동 선택
 app/
   page.tsx                         # 클라이언트 대시보드 진입점
   layout.tsx                       # 루트 레이아웃
   globals.css                      # 전역 스타일 및 Tailwind
   api/
     news-analysis/route.ts         # 뉴스 수집 + AI 분석 실행
-    weather/route.ts               # OpenWeather 날씨 조회 + 도시명 정규화
+    weather/route.ts               # KMA/OpenWeather 하이브리드 날씨 조회 + 도시명 정규화
     history/
       articles/route.ts            # 기간별 기사 목록
       compare/route.ts             # 직전 동일 기간 대비 변화 요약
@@ -73,7 +74,7 @@ npm install
 npm run dev
 ```
 
-개발 서버는 기본적으로 `http://localhost:3000`에서 실행됩니다. 다른 포트를 쓰려면 `PORT=3001 npm run dev`처럼 환경변수로 지정합니다.
+개발 서버는 기본적으로 `http://localhost:3000`에서 실행됩니다. 3000번 포트가 사용 중이면 `3001`, `3002` 순서로 빈 포트를 자동 선택합니다. 특정 포트를 고정하려면 `PORT=3001 npm run dev`처럼 환경변수로 지정합니다.
 
 ## 빌드와 검증
 
@@ -98,7 +99,7 @@ npm run start
 - 정보 구조: 카드 라운드와 그림자를 낮추고, 보더·여백·타이포 위계로 기사/통계/분석 데이터를 우선 노출
 - 탐색 구조: Header는 전역 액션 중심으로 가볍게 유지하고, 검색/최근 검색어는 Sidebar에 배치
 - 검색 UX: Sidebar 검색 제출과 최근 검색어 선택은 최신뉴스 탭으로 이동하며, 검색어 상태와 해제 액션을 최신뉴스 필터 영역에 표시
-- 모바일 Sidebar: 닫기 버튼은 `X` 대신 Sidebar 닫기 아이콘을 사용해 데스크톱 탐색과 일관성 유지
+- 모바일 Sidebar: 닫기 버튼은 왼쪽 상단에 배치하고 `X` 대신 3줄 메뉴 아이콘을 사용해 모바일 기본 패턴과 일관성 유지
 - 로컬 디자인 샘플: `public/hybrid-dashboard-sample.html`은 실험용 파일이며 `.gitignore`로 제외
 
 ## 환경 변수
@@ -116,8 +117,8 @@ KMA_API_KEY=...
 - `SUPABASE_URL`: Supabase 프로젝트 URL입니다.
 - `SUPABASE_KEY`: 서버에서 DB 저장/조회에 사용하는 키입니다. 운영 환경에서는 service role 키 사용을 전제로 합니다.
 - `GEMINI_MODELS`: 선택값입니다. 쉼표로 구분된 모델 목록을 순환 사용하며 기본값은 `gemini-2.5-flash,gemini-2.5-flash-lite`입니다. 429/503 등 재시도 가능한 에러 발생 시 목록의 다음 모델로 자동 폴백합니다.
-- `OPENWEATHER_API_KEY`: 선택값입니다. Sidebar의 날씨 탭에서 OpenWeather 현재 날씨와 5일 예보를 조회할 때 사용합니다.
-- `KMA_API_KEY`: 선택값입니다. 한국 도시 날씨를 기상청 API로 조회하는 KMA 하이브리드 전환에 사용합니다.
+- `OPENWEATHER_API_KEY`: 선택값입니다. Sidebar의 날씨 탭에서 해외 도시 조회와 KMA 실패 fallback에 사용합니다.
+- `KMA_API_KEY`: 선택값입니다. 한국 도시 날씨를 기상청 API로 우선 조회할 때 사용합니다.
 
 ## API
 

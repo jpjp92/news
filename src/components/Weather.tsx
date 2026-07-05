@@ -4,8 +4,6 @@ import {
   CloudRain,
   CloudSun,
   Droplets,
-  Eye,
-  Gauge,
   MapPin,
   RefreshCw,
   Search,
@@ -44,7 +42,7 @@ interface WeatherData {
     minTemp: number;
     maxTemp: number;
     humidity: number;
-    pressure: number;
+    pressure: number | null;
     windSpeed: number;
     windGust: number | null;
     clouds: number;
@@ -62,7 +60,8 @@ interface WeatherData {
 
 function formatDay(date: string) {
   const d = new Date(`${date}T00:00:00`);
-  return `${d.getMonth() + 1}/${d.getDate()}`;
+  const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+  return `${d.getMonth() + 1}/${d.getDate()} (${dayNames[d.getDay()]})`;
 }
 
 function formatTime(iso: string) {
@@ -131,8 +130,8 @@ function StatItem({
 }
 
 export function Weather() {
-  const [cityInput, setCityInput] = useState('Seoul');
-  const [city, setCity] = useState('Seoul');
+  const [cityInput, setCityInput] = useState('서울');
+  const [city, setCity] = useState('서울');
   const [data, setData] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<{ message: string; code?: string } | null>(null);
@@ -283,9 +282,9 @@ export function Weather() {
             <StatItem icon={<Droplets size={15} />} label="습도" value={`${data.current.humidity}%`} />
             <StatItem icon={<Wind size={15} />} label="풍속" value={`${data.current.windSpeed}m/s`} />
             <StatItem icon={<CloudRain size={15} />} label="강수" value={precipitation} />
-            <StatItem icon={<Gauge size={15} />} label="기압" value={`${data.current.pressure}hPa`} />
-            <StatItem icon={<Eye size={15} />} label="가시거리" value={data.current.visibilityKm ? `${data.current.visibilityKm}km` : '-'} />
+            <StatItem icon={<CloudRain size={15} />} label="강수확률" value={`${data.daily[0]?.precipitationChance ?? 0}%`} />
             <StatItem icon={<Thermometer size={15} />} label="구름" value={`${data.current.clouds}%`} />
+            <StatItem icon={<Thermometer size={15} />} label="체감" value={`${data.current.feelsLike}°C`} />
           </div>
 
           <GlassCard className="p-5">

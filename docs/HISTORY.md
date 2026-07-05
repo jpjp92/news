@@ -55,7 +55,102 @@
 - 초기 KMA 조합은 `초단기실황 + 단기예보 + 육상예보`가 적절함
 - 중기예보는 단기예보가 5일을 채우지 못하는 경우의 backfill 또는 향후 주간 전망 카드용으로 보류
 - 한국 도시는 KMA 우선, 해외 도시는 OpenWeather, KMA 실패 시 OpenWeather fallback 구조가 적합함
-- KMA는 기압/가시거리/돌풍 값이 현재 UI 계약만큼 제공되지 않으므로 실제 적용 시 값 없음 표시(`-`) 보정 필요
+- KMA와 OpenWeather 공통성이 낮은 기압/가시거리/돌풍은 기본 지표에서 제외하는 방향이 적합함
+
+### KMA/OpenWeather 하이브리드 날씨 API 적용
+
+변경 파일:
+
+- `app/api/weather/route.ts`
+- `src/components/Weather.tsx`
+- `README.md`
+- `docs/TODO.md`
+- `docs/HISTORY.md`
+
+변경 내용:
+
+- 한국 주요 도시는 KMA를 우선 사용하도록 provider 분기 추가
+- KMA 실패 또는 KMA 키 미설정 시 기존 OpenWeather 경로로 fallback
+- 해외 도시는 기존처럼 OpenWeather 사용
+- KMA 호출은 초기 적용 범위에서 `초단기실황 + 단기예보 + 육상예보` 조합 사용
+- KMA의 `T1H`, `REH`, `WSD`, `RN1`, `SKY`, `PTY`, `TMP`, `TMN`, `TMX`, `POP`, `PCP`, `SNO` 값을 기존 Weather UI 계약으로 정규화
+- 상세 지표를 기압/가시거리 대신 강수확률/체감온도로 교체해 KMA/OpenWeather 공통 필드 중심으로 정리
+
+검증:
+
+- `npm run lint` 통과
+- `GET /api/weather?city=서울` 응답 확인
+  - `source: KMA`
+  - 응답 시간 약 2.3초
+- `GET /api/weather?city=마드리드` 응답 확인
+  - `source: OpenWeather`
+  - 응답 시간 약 0.7초
+
+### 개발 서버 포트 자동 선택
+
+변경 파일:
+
+- `dev.mjs`
+- `README.md`
+
+변경 내용:
+
+- `npm run dev` 실행 시 기본 포트 `3000`이 사용 중이면 `3001`부터 순차적으로 빈 포트를 찾아 Next dev 서버를 실행
+- `PORT=3001 npm run dev`처럼 포트를 명시한 경우에는 해당 포트가 사용 중일 때 실패하도록 유지
+- 기존에 `3000`을 점유하던 프로세스는 종료
+- 커밋되어야 하는 dev 런처는 로컬 전용 `scripts/` 폴더에서 루트 `dev.mjs`로 이동
+
+### 루트 파일 정리
+
+변경 파일:
+
+- `metadata.json`
+- `index.html`
+- `docs/HISTORY.md`
+
+검토 결과:
+
+- `metadata.json`: 비어 있는 템플릿 메타 파일이며 Next 앱에서 참조하지 않아 삭제
+- `index.html`: Vite 진입점 잔재이며 현재 앱은 `app/page.tsx`와 `app/layout.tsx`를 사용하므로 삭제
+- `next-env.d.ts`: Next/TypeScript 타입 참조 파일이므로 유지
+- `next.config.ts`, `postcss.config.mjs`, `instrumentation.ts`, `vercel.json`, `Dockerfile`, `.dockerignore`, `dev.mjs`: 현재 설정 또는 실행에 필요한 파일로 유지
+
+### 날씨 UI 공통 지표 및 기본값 정리
+
+변경 파일:
+
+- `src/components/Weather.tsx`
+- `docs/HISTORY.md`
+- `docs/TODO.md`
+- `README.md`
+
+변경 내용:
+
+- 날씨 탭 기본 도시를 `Seoul`에서 `서울`로 변경
+- 5일 예보 날짜를 `7/5 (일)`처럼 요일 포함 형식으로 변경
+- KMA/OpenWeather 공통성이 낮은 기압/가시거리 대신 강수확률/체감온도 지표를 표시
+- 상세 지표를 습도, 풍속, 강수, 강수확률, 구름, 체감온도 중심으로 정리
+
+검증:
+
+- `npm run lint` 통과
+
+### 모바일 Sidebar 닫기 아이콘 정리
+
+변경 파일:
+
+- `src/components/Sidebar.tsx`
+- `README.md`
+
+변경 내용:
+
+- 모바일 Sidebar 드로어의 닫기 버튼을 오른쪽에서 왼쪽 상단으로 이동
+- 닫기 아이콘을 Sidebar 전용 아이콘에서 모바일 기본에 가까운 3줄 메뉴 아이콘으로 변경
+- 데스크톱 Sidebar 접기/펼치기 아이콘은 기존 동작 유지
+
+검증:
+
+- `npm run lint` 통과
 
 ---
 
@@ -74,7 +169,7 @@
 - 최근 검색어 선택 시에도 최신뉴스 탭으로 이동하고 해당 검색어로 기사 목록 필터링
 - 최신뉴스 필터 영역에 현재 검색어 표시와 검색 해제 버튼 추가
 - 검색어 하이라이트 정규식을 escape 처리해 특수문자 입력 시 렌더링 오류 방지
-- 모바일 Sidebar 닫기 버튼을 `X`에서 Sidebar 닫기 아이콘으로 변경
+- 모바일 Sidebar 닫기 버튼을 `X`에서 Sidebar 계열 아이콘으로 변경
 - `scripts/` 폴더 전체를 `.gitignore`에 추가해 로컬 전용 스크립트가 커밋되지 않도록 정리
 
 #### 검증

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { LayoutDashboard, Newspaper, TrendingUp, Settings, PanelLeftClose, PanelLeftOpen, Search, History, CloudSun } from 'lucide-react';
+import { LayoutDashboard, Newspaper, TrendingUp, Settings, PanelLeftClose, PanelLeftOpen, Search, History, CloudSun, Menu } from 'lucide-react';
 import { GlassCard } from './GlassCard';
 import { useNews } from '../context/NewsContext';
 
@@ -28,13 +28,13 @@ export function Sidebar({ activeTab = 'dashboard', setActiveTab = () => {}, isOp
           />
           {/* 드로어 패널 */}
           <div className="relative w-64 h-full bg-[#fbfaf6]/95 dark:bg-[#191a18]/94 backdrop-blur-xl border-r border-[#ded9cf] dark:border-white/10 flex flex-col shadow-2xl">
-            <div className="p-4 flex items-center justify-end border-b border-black/5 dark:border-white/10">
+            <div className="p-4 flex items-center justify-start border-b border-black/5 dark:border-white/10">
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-gray-100/50 dark:hover:bg-slate-700/50 transition-colors"
+                className="p-2 rounded-lg text-[#6f6a60] hover:text-[#202326] dark:text-[#d8d2c8] dark:hover:text-[#f2eee7] hover:bg-[#ebe8df] dark:hover:bg-white/[0.08] transition-colors"
                 title="사이드바 닫기"
               >
-                <PanelLeftClose size={20} />
+                <Menu size={20} />
               </button>
             </div>
             <div className="flex-1 px-4 py-4">
