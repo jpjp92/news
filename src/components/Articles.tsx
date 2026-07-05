@@ -139,7 +139,7 @@ export function Articles() {
     const parts = text.split(new RegExp(`(${query})`, 'gi'));
     return parts.map((part, i) =>
       part.toLowerCase() === query.toLowerCase()
-        ? <span key={i} className="bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 px-0.5 rounded font-bold">{part}</span>
+        ? <span key={i} className="bg-[#c83a32]/15 dark:bg-[#d7a36f]/18 text-[#c83a32] dark:text-[#d7a36f] px-0.5 rounded font-bold">{part}</span>
         : part
     );
   };
@@ -164,7 +164,7 @@ export function Articles() {
         <button
           onClick={handleRefresh}
           disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-white/40 dark:bg-slate-800/40 hover:bg-white/60 dark:hover:bg-slate-700/60 backdrop-blur-md border border-white/50 dark:border-white/10 rounded-xl text-indigo-700 dark:text-indigo-400 font-medium transition-all disabled:opacity-50 text-sm"
+          className="flex items-center gap-2 px-4 py-2 bg-[#232323] dark:bg-[#d7a36f] hover:bg-[#3a3935] dark:hover:bg-[#e0b481] backdrop-blur-md border border-[#232323] dark:border-[#d7a36f] rounded-lg text-white dark:text-[#111316] font-medium transition-all disabled:opacity-50 text-sm"
         >
           <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           새로고침
@@ -179,7 +179,7 @@ export function Articles() {
             onClick={() => setPeriod(p)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
               period === p
-                ? 'bg-indigo-500 text-white shadow-sm'
+                ? 'bg-[#232323] dark:bg-[#d7a36f] text-white dark:text-[#111316] shadow-sm'
                 : 'bg-white/40 dark:bg-white/5 text-gray-500 dark:text-white/50 border border-white/50 dark:border-white/10 hover:bg-white/60 dark:hover:bg-white/10'
             }`}
           >
@@ -214,7 +214,7 @@ export function Articles() {
                   onClick={() => setSelectedCategory(cat)}
                   className={`px-1.5 py-0.5 rounded-md text-[10px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
                     selectedCategory === cat
-                      ? 'bg-indigo-500 text-white shadow-sm'
+                      ? 'bg-[#232323] dark:bg-[#d7a36f] text-white dark:text-[#111316] shadow-sm'
                       : 'text-gray-500 dark:text-white/50 hover:bg-white/50 dark:hover:bg-white/5 hover:text-gray-700 dark:hover:text-white/80'
                   }`}
                 >
@@ -228,7 +228,7 @@ export function Articles() {
             <span className="text-[10px] font-bold text-gray-400 dark:text-white/30 uppercase w-10 flex-shrink-0">감성</span>
             <div className="flex gap-1 flex-1">
               {[
-                { id: 'all',      label: '전체', icon: <Activity size={11} />, active: 'bg-indigo-500' },
+                { id: 'all',      label: '전체', icon: <Activity size={11} />, active: 'bg-[#232323] dark:bg-[#d7a36f] dark:text-[#111316]' },
                 { id: 'positive', label: '긍정', icon: <Smile size={11} />,    active: 'bg-emerald-500' },
                 { id: 'neutral',  label: '중립', icon: <Meh size={11} />,      active: 'bg-slate-500' },
                 { id: 'negative', label: '부정', icon: <Frown size={11} />,    active: 'bg-rose-500' },
@@ -263,7 +263,7 @@ export function Articles() {
                   onClick={() => setSortOrder(option.id)}
                   className={`px-1.5 py-0.5 rounded-md text-[10px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
                     sortOrder === option.id
-                      ? 'bg-indigo-500 text-white shadow-sm'
+                      ? 'bg-[#232323] dark:bg-[#d7a36f] text-white dark:text-[#111316] shadow-sm'
                       : 'text-gray-500 dark:text-white/50 hover:bg-white/50 dark:hover:bg-white/5 hover:text-gray-700 dark:hover:text-white/80'
                   }`}
                 >
@@ -311,9 +311,9 @@ export function Articles() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {visibleArticles.map((article, idx) => (
-            <GlassCard key={idx} className="p-5 flex flex-col hover:shadow-lg dark:hover:shadow-indigo-500/10 transition-shadow duration-300">
+            <GlassCard key={idx} className="p-5 flex flex-col hover:shadow-lg dark:hover:shadow-[#d7a36f]/10 transition-shadow duration-300">
               <div className="flex justify-between items-start mb-3">
-                <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-full text-[10px] font-semibold whitespace-nowrap truncate max-w-[7rem]">
+                <span className="px-2 py-0.5 bg-[#ebe8df] dark:bg-white/[0.08] text-[#6f6a60] dark:text-[#d8d2c8] rounded-full text-[10px] font-semibold whitespace-nowrap truncate max-w-[7rem]">
                   {article.category}
                 </span>
                 {article.sentiment && (
@@ -334,7 +334,7 @@ export function Articles() {
                     href={article.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-xs font-medium flex items-center gap-1 transition-colors"
+                    className="text-[#c83a32] dark:text-[#d7a36f] hover:text-[#9f2f2a] dark:hover:text-[#e0b481] text-xs font-medium flex items-center gap-1 transition-colors"
                   >
                     원문 보기 <ExternalLink size={12} />
                   </a>
@@ -363,7 +363,7 @@ export function Articles() {
               <button
                 onClick={() => setCurrentPage(page => Math.min(totalPages, page + 1))}
                 disabled={safeCurrentPage === totalPages}
-                className="px-3 py-2 rounded-lg text-sm font-medium bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="px-3 py-2 rounded-lg text-sm font-medium bg-[#232323] dark:bg-[#d7a36f] text-white dark:text-[#111316] hover:bg-[#3a3935] dark:hover:bg-[#e0b481] disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 다음
               </button>

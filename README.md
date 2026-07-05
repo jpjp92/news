@@ -10,6 +10,7 @@ Next.js 기반 AI 뉴스 트렌드 대시보드입니다. 네이버 뉴스 섹�
 - 히스토리 분석: 오늘, 7일, 30일 기준 세션/키워드/감성/기사 조회
 - Supabase 저장: 세션, 카테고리 통계, 키워드 통계, 기사 요약 분리 저장
 - 반응형 UI: 대시보드, 핵심 분석, 최신뉴스, 설정 화면 제공 및 탭 전환 시 스크롤 위치 초기화
+- 하이브리드 UI: 웜 그레이 기반의 Swiss 정보 구조와 절제된 glass/gradient 포인트를 light/dark mode에 적용
 - 로컬 감성 분류 모델 학습: 누적된 기사 데이터로 한국어 감성 분류 모델(KLUE-RoBERTa 등)을 Colab에서 파인튜닝 (`colab_training/`)
 
 ## 기술 스택
@@ -82,6 +83,16 @@ npm run start
 - `npm run lint`: TypeScript 타입 검사(`tsc --noEmit`)
 - `npm run build`: Next.js 프로덕션 빌드
 - `npm run start`: 빌드 결과 실행
+
+## UI 디자인 방향
+
+현재 UI는 `Warm Swiss Dashboard` 방향을 기준으로 정리합니다.
+
+- Light mode: 순백 배경 대신 웜 그레이/페이퍼 톤을 사용해 장시간 모니터링 피로도를 낮춤
+- Dark mode: 기존 navy/indigo 중심 톤을 줄이고 깊은 차콜 배경과 muted amber/teal accent 사용
+- Glass/gradient: 전체 화면 장식보다 Header, KPI, 핵심 요약 영역에만 제한적으로 적용
+- 정보 구조: 카드 라운드와 그림자를 낮추고, 보더·여백·타이포 위계로 기사/통계/분석 데이터를 우선 노출
+- 로컬 디자인 샘플: `public/hybrid-dashboard-sample.html`은 실험용 파일이며 `.gitignore`로 제외
 
 ## 환경 변수
 

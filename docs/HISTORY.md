@@ -2,6 +2,43 @@
 
 > 최근순 정렬
 
+## 2026-07-05
+
+### Warm Swiss 하이브리드 UI 개편
+
+#### 변경 파일
+
+- `app/globals.css`
+- `src/index.css`
+- `src/App.tsx`
+- `src/components/GlassCard.tsx`
+- `src/components/Header.tsx`
+- `src/components/Sidebar.tsx`
+- `src/components/Dashboard.tsx`
+- `src/components/Articles.tsx`
+- `src/components/Analytics.tsx`
+- `src/components/Settings.tsx`
+- `src/components/TrendChart.tsx`
+- `.gitignore`
+
+#### 변경 내용
+
+- 전체 light mode 배경을 순백/보라 계열에서 웜 그레이 기반 `warm-bg`로 변경
+- 공통 카드(`GlassCard`)를 큰 라운드와 강한 glass shadow에서 낮은 라운드, 약한 보더, paper surface 톤으로 조정
+- Header/Sidebar의 purple/indigo gradient 브랜드 톤을 차콜/웜 액센트 기반으로 정리
+- Dashboard 상단을 얕은 aurora/glass hero 스타일로 재구성하고 KPI 카드 색상을 muted red/teal 계열로 조정
+- Dashboard, Articles, Analytics, Settings, TrendChart에 남아 있던 강한 indigo/purple 액센트를 제거하고 light/dark 공통 팔레트로 통일
+- Dark mode를 deep navy 중심에서 차콜 배경 + muted amber/teal accent로 변경
+- scrollbar와 orb 색상도 새 팔레트에 맞춰 조정
+- 로컬 디자인 샘플 `public/hybrid-dashboard-sample.html`을 `.gitignore`에 추가
+
+#### 검증
+
+- `npm run lint` 통과
+- `http://localhost:3002` dev server에서 Next 컴파일 에러 없음
+
+---
+
 ## 2026-07-04
 
 ### 뉴스 원문 링크 및 최근 DB 수집 데이터 정리

@@ -29,7 +29,7 @@ function AppContent() {
   }, [activeTab]);
 
   return (
-    <div className={`h-screen flex overflow-hidden ${theme === 'dark' ? 'dark dark-bg' : 'bg-slate-50'} transition-colors duration-500 relative`}>
+    <div className={`h-screen flex overflow-hidden ${theme === 'dark' ? 'dark dark-bg' : 'warm-bg'} transition-colors duration-500 relative`}>
       {/* Light mode orbs */}
       {theme !== 'dark' && (
         <>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Newspaper, TrendingUp, Settings, Hexagon, PanelLeftClose, PanelLeftOpen, X } from 'lucide-react';
+import { LayoutDashboard, Newspaper, TrendingUp, Settings, PanelLeftClose, PanelLeftOpen, X } from 'lucide-react';
 import { GlassCard } from './GlassCard';
 
 interface SidebarProps {
@@ -26,19 +26,12 @@ export function Sidebar({ activeTab = 'dashboard', setActiveTab = () => {}, isOp
             onClick={() => setIsOpen(false)}
           />
           {/* 드로어 패널 */}
-          <div className="relative w-64 h-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-r border-white/40 dark:border-white/10 flex flex-col shadow-2xl">
-            <div className="p-4 flex items-center justify-between border-b border-black/5 dark:border-white/10">
-              <div className="flex items-center gap-3">
-                <div className="bg-gradient-to-br from-purple-500 to-indigo-500 p-2 rounded-xl text-white flex-shrink-0">
-                  <Hexagon size={22} />
-                </div>
-                <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-700 to-indigo-700 dark:from-purple-400 dark:to-indigo-400">
-                  NewsDash
-                </span>
-              </div>
+          <div className="relative w-64 h-full bg-[#fbfaf6]/95 dark:bg-[#191a18]/94 backdrop-blur-xl border-r border-[#ded9cf] dark:border-white/10 flex flex-col shadow-2xl">
+            <div className="p-4 flex items-center justify-end border-b border-black/5 dark:border-white/10">
               <button
                 onClick={() => setIsOpen(false)}
                 className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-gray-100/50 dark:hover:bg-slate-700/50 transition-colors"
+                title="사이드바 닫기"
               >
                 <X size={20} />
               </button>
@@ -59,26 +52,16 @@ export function Sidebar({ activeTab = 'dashboard', setActiveTab = () => {}, isOp
       )}
 
       {/* 데스크탑 사이드바 */}
-      <GlassCard className={`h-[calc(100vh-2rem)] m-4 flex-col transition-all duration-300 hidden md:flex ${isOpen ? 'w-64' : 'w-20'} bg-white/60 dark:bg-slate-900/60 border-white/40 dark:border-white/5`}>
+      <GlassCard className={`h-[calc(100vh-2rem)] m-4 flex-col transition-all duration-300 hidden md:flex ${isOpen ? 'w-64' : 'w-20'} bg-[#fbfaf6]/76 dark:bg-[#191a18]/68 border-[#ded9cf] dark:border-white/[0.08]`}>
         <div className={`p-4 flex items-center ${isOpen ? 'justify-between' : 'justify-center'}`}>
           {isOpen ? (
-            <>
-              <div className="flex items-center gap-3">
-                <div className="bg-gradient-to-br from-purple-500 to-indigo-500 p-2 rounded-xl text-white flex-shrink-0">
-                  <Hexagon size={24} />
-                </div>
-                <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-700 to-indigo-700 dark:from-purple-400 dark:to-indigo-400 whitespace-nowrap">
-                  NewsDash
-                </span>
-              </div>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200 transition-colors p-1.5 rounded-lg hover:bg-gray-100/50 dark:hover:bg-slate-700/50"
-                title="사이드바 닫기"
-              >
-                <PanelLeftClose size={20} />
-              </button>
-            </>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200 transition-colors p-1.5 rounded-lg hover:bg-gray-100/50 dark:hover:bg-slate-700/50"
+              title="사이드바 닫기"
+            >
+              <PanelLeftClose size={20} />
+            </button>
           ) : (
             <button
               onClick={() => setIsOpen(true)}
@@ -109,15 +92,15 @@ function NavItem({ icon, label, active = false, onClick, isOpen = true }: { icon
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center ${isOpen ? 'justify-start px-4' : 'justify-center px-0'} py-3 rounded-xl transition-all duration-200 ${
+      className={`w-full flex items-center ${isOpen ? 'justify-start px-4' : 'justify-center px-0'} py-3 rounded-lg transition-all duration-200 ${
         active
-          ? 'bg-white/60 dark:bg-white/[0.09] text-indigo-700 dark:text-white shadow-sm font-bold dark:border dark:border-white/[0.18] relative'
-          : 'text-gray-600 dark:text-white/60 hover:bg-white/30 dark:hover:bg-white/5 hover:text-indigo-600 dark:hover:text-white'
+          ? 'bg-[#232323] dark:bg-[#d7a36f] text-white dark:text-[#111316] shadow-sm font-bold dark:border dark:border-[#d7a36f]/30 relative'
+          : 'text-[#6f6a60] dark:text-[#b8b0a5] hover:bg-[#ebe8df] dark:hover:bg-white/[0.06] hover:text-[#202326] dark:hover:text-[#f2eee7]'
       }`}
       title={!isOpen ? label : undefined}
     >
       {active && (
-        <span className="hidden dark:block absolute -left-[17px] top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-indigo-400 shadow-[0_0_10px_rgba(129,140,248,0.8)]" />
+        <span className="hidden dark:block absolute -left-[17px] top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[#d7a36f] shadow-[0_0_10px_rgba(215,163,111,0.55)]" />
       )}
       <div className="flex-shrink-0">{icon}</div>
       {isOpen && <span className="ml-3 whitespace-nowrap">{label}</span>}

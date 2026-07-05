@@ -16,7 +16,7 @@ export function GlassCard({ children, className, ...props }: GlassCardProps) {
   return (
     <div
       className={cn(
-        "bg-white/40 backdrop-blur-xl border border-white/50 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] rounded-2xl transition-colors duration-300 dark:bg-white/[0.055] dark:backdrop-blur-2xl dark:border-white/[0.11] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.5)]",
+        "bg-[#fbfaf6]/82 backdrop-blur-md border border-[#ded9cf] shadow-[0_1px_0_rgba(255,255,255,0.72)_inset,0_12px_30px_rgba(55,50,42,0.055)] rounded-xl transition-colors duration-300 dark:bg-white/[0.055] dark:backdrop-blur-2xl dark:border-white/[0.11] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.5)]",
         className
       )}
       {...props}

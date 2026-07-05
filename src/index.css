@@ -7,9 +7,21 @@
 
 @variant dark (&:where(.dark, .dark *));
 
+:root {
+  --dash-bg: #f2f0ea;
+  --dash-surface: #fbfaf6;
+  --dash-surface-soft: #ebe8df;
+  --dash-border: #ded9cf;
+  --dash-text: #202326;
+  --dash-muted: #6f6a60;
+  --dash-accent: #c83a32;
+  --dash-accent-2: #1f6f68;
+}
+
 body {
   @apply transition-colors duration-300 antialiased;
   font-family: var(--font-sans);
+  color: var(--dash-text);
 }
 
 * {
@@ -54,15 +66,15 @@ body {
 }
 
 .dark * {
-  scrollbar-color: rgb(165 180 252 / 0.38) transparent;
+  scrollbar-color: rgb(186 154 116 / 0.38) transparent;
 }
 
 .dark *::-webkit-scrollbar-thumb {
   background:
     linear-gradient(
       180deg,
-      rgb(165 180 252 / 0.4),
-      rgb(192 132 252 / 0.34)
+      rgb(186 154 116 / 0.42),
+      rgb(117 139 132 / 0.36)
     );
   border: 3px solid transparent;
   background-clip: padding-box;
@@ -72,19 +84,26 @@ body {
   background:
     linear-gradient(
       180deg,
-      rgb(165 180 252 / 0.58),
-      rgb(192 132 252 / 0.5)
+      rgb(202 170 128 / 0.58),
+      rgb(130 158 149 / 0.5)
     );
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 
 /* Dark mode — deep navy background */
+.warm-bg {
+  background:
+    linear-gradient(135deg, rgba(196, 214, 210, 0.52), transparent 34%),
+    linear-gradient(225deg, rgba(221, 194, 181, 0.42), transparent 38%),
+    var(--dash-bg);
+}
+
 .dark-bg {
   background:
-    radial-gradient(ellipse at top left, #1a2b5c 0%, transparent 60%),
-    radial-gradient(ellipse at bottom right, #0f1e3d 0%, transparent 55%),
-    linear-gradient(160deg, #0a1428 0%, #0f1e3d 100%);
+    radial-gradient(ellipse at top left, rgba(76, 91, 84, 0.42) 0%, transparent 58%),
+    radial-gradient(ellipse at bottom right, rgba(111, 66, 58, 0.32) 0%, transparent 56%),
+    linear-gradient(160deg, #111316 0%, #1b1a17 100%);
 }
 
 /* Orb animations */
@@ -98,22 +117,22 @@ body {
 }
 .orb-1 {
   width: 520px; height: 520px;
-  background: oklch(0.45 0.18 240);
-  opacity: 0.45;
+  background: oklch(0.36 0.055 175);
+  opacity: 0.32;
   top: -80px; left: -100px;
   animation-delay: 0s;
 }
 .orb-2 {
   width: 640px; height: 640px;
-  background: oklch(0.5 0.16 210);
-  opacity: 0.35;
+  background: oklch(0.34 0.06 35);
+  opacity: 0.28;
   bottom: -200px; right: -150px;
   animation-delay: -7s;
 }
 .orb-3 {
   width: 400px; height: 400px;
-  background: oklch(0.42 0.2 270);
-  opacity: 0.28;
+  background: oklch(0.32 0.05 70);
+  opacity: 0.22;
   top: 40%; left: 55%;
   animation-delay: -13s;
 }

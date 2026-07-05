@@ -45,6 +45,9 @@ models/sentiment/checkpoints/**
 .codex/
 .claude/
 
+# ── 로컬 디자인 샘플 ──────────────────────────────────────────────────────────
+public/hybrid-dashboard-sample.html
+
 # ── 커밋 제외 스크립트 / SQL (민감 또는 일회성) ────────────────────────────────
 scripts/migrate-supabase.mjs
 db/migrations/000_cleanup_public_news_tables_if_empty.sql

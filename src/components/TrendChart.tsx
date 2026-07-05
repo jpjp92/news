@@ -43,11 +43,11 @@ export function TrendChart({
           </div>
           <div className="flex flex-col xs:flex-row gap-1.5 xs:gap-3 md:gap-4 text-[10px] md:text-sm shrink-0">
             <div className="flex items-center gap-1.5 md:gap-2">
-              <span className="w-2 h-2 md:w-3 md:h-3 rounded-full bg-indigo-500"></span>
+              <span className="w-2 h-2 md:w-3 md:h-3 rounded-full bg-[#c83a32] dark:bg-[#d7a36f]"></span>
               <span className="text-gray-600 dark:text-gray-400">{articlesLabel}</span>
             </div>
             <div className="flex items-center gap-1.5 md:gap-2">
-              <span className="w-2 h-2 md:w-3 md:h-3 rounded-full bg-purple-400"></span>
+              <span className="w-2 h-2 md:w-3 md:h-3 rounded-full bg-[#1f6f68] dark:bg-[#7fb2a8]"></span>
               <span className="text-gray-600 dark:text-gray-400">{sentimentLabel}</span>
             </div>
           </div>
@@ -60,15 +60,15 @@ export function TrendChart({
             <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="colorArticles" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
-                <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                <stop offset="5%" stopColor="#c83a32" stopOpacity={0.26}/>
+                <stop offset="95%" stopColor="#c83a32" stopOpacity={0}/>
               </linearGradient>
               <linearGradient id="colorSentiment" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#a855f7" stopOpacity={0.3}/>
-                <stop offset="95%" stopColor="#a855f7" stopOpacity={0}/>
+                <stop offset="5%" stopColor="#1f6f68" stopOpacity={0.24}/>
+                <stop offset="95%" stopColor="#1f6f68" stopOpacity={0}/>
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(120,110,96,0.16)" />
             <XAxis 
               dataKey="label" 
               axisLine={false} 
@@ -110,12 +110,12 @@ export function TrendChart({
                   }
 
                   return (
-                    <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-4 border border-white/50 dark:border-white/10 rounded-2xl shadow-xl">
+                    <div className="bg-white/90 dark:bg-[#191a18]/94 backdrop-blur-md p-4 border border-white/50 dark:border-white/10 rounded-xl shadow-xl">
                       <p className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2">{label}</p>
                       <div className="space-y-1.5">
                         <div className="flex justify-between items-center gap-8">
                           <span className="text-sm text-gray-600 dark:text-gray-300">{articlesLabel}</span>
-                          <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{articles}개</span>
+                          <span className="text-sm font-bold text-[#c83a32] dark:text-[#d7a36f]">{articles}개</span>
                         </div>
                         <div className="flex justify-between items-center gap-8">
                           <span className="text-sm text-gray-600 dark:text-gray-300">{sentimentLabel}</span>
@@ -135,7 +135,7 @@ export function TrendChart({
             <Area 
               type="monotone" 
               dataKey="articles" 
-              stroke="#6366f1" 
+              stroke="#c83a32" 
               strokeWidth={3}
               fillOpacity={1} 
               fill="url(#colorArticles)" 
@@ -143,7 +143,7 @@ export function TrendChart({
             <Area 
               type="monotone" 
               dataKey="sentiment" 
-              stroke="#a855f7" 
+              stroke="#1f6f68" 
               strokeWidth={3}
               fillOpacity={1} 
               fill="url(#colorSentiment)" 

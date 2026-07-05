@@ -70,6 +70,24 @@ rankScore = appearance_count * 0.5 + avg_score * 0.4 + recencyScore * 0.1;
 
 ## Medium Priority
 
+### [Planned] UI 개편 후 시각 검증 정리
+
+2026-07-05 Warm Swiss 하이브리드 UI를 1차 적용했다. 기능 동작은 유지했지만, 실제 사용 데이터 기준의 시각 검증이 남아 있다.
+
+확인 범위:
+
+- Dashboard, Articles, Analytics, Settings의 light/dark mode 비교
+- 390px 모바일, 1280px 노트북, 1440px 이상 데스크톱 레이아웃
+- 긴 기사 제목, 긴 카테고리명, URL 없는 기사, 빈 데이터, 로딩, 에러 상태
+- 차트 색상 대비와 tooltip 가독성
+- 다크모드에서 amber/teal accent가 과하거나 부족하지 않은지 확인
+
+완료 기준:
+
+- 텍스트 겹침/잘림 없이 주요 정보가 먼저 보임
+- light/dark mode가 같은 제품 톤으로 인식됨
+- 남은 purple/indigo 계열이 의도치 않게 강조색으로 보이지 않음
+
 ### [Planned] 확장 분석 필드 DB 정규화
 
 현재 `trendDrivers`, `dominantIssue`, `reason`은 `news_sessions.raw_data.data`에서 복원한다. 최신 세션 표시에는 충분하지만 기간별 분석에는 활용하기 어렵다.

@@ -155,7 +155,7 @@ export function Analytics() {
           <button
             onClick={fetchData}
             disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-white/40 dark:bg-slate-800/40 hover:bg-white/60 dark:hover:bg-slate-700/60 backdrop-blur-md border border-white/50 dark:border-white/10 rounded-xl text-indigo-700 dark:text-indigo-400 font-medium transition-all disabled:opacity-50 text-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-[#232323] dark:bg-[#d7a36f] hover:bg-[#3a3935] dark:hover:bg-[#e0b481] backdrop-blur-md border border-[#232323] dark:border-[#d7a36f] rounded-lg text-white dark:text-[#111316] font-medium transition-all disabled:opacity-50 text-sm"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
             새로고침
@@ -171,7 +171,7 @@ export function Analytics() {
             onClick={() => setPeriod(p)}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
               period === p
-                ? 'bg-indigo-500 text-white shadow-sm'
+                ? 'bg-[#232323] dark:bg-[#d7a36f] text-white dark:text-[#111316] shadow-sm'
                 : 'bg-white/40 dark:bg-white/5 text-gray-600 dark:text-white/50 border border-white/50 dark:border-white/10 hover:bg-white/60 dark:hover:bg-white/10'
             }`}
           >
@@ -212,7 +212,7 @@ export function Analytics() {
             <GlassCard className="p-6">
               <div className="flex items-start justify-between gap-4 mb-5">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="p-3 bg-indigo-100/50 dark:bg-indigo-900/30 rounded-xl text-indigo-600 dark:text-indigo-400">
+                  <div className="p-3 bg-[#e8ded1] dark:bg-[#4a3327]/45 rounded-lg text-[#c83a32] dark:text-[#d7a36f]">
                     <TrendingUp size={24} />
                   </div>
                   <div className="min-w-0">
@@ -307,7 +307,7 @@ export function Analytics() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <GlassCard className="p-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 bg-purple-100/50 dark:bg-purple-900/30 rounded-xl text-purple-600 dark:text-purple-400">
+                  <div className="p-3 bg-[#dce8e3] dark:bg-[#263d38]/52 rounded-lg text-[#1f6f68] dark:text-[#7fb2a8]">
                     <PieChart size={24} />
                   </div>
                   <div>
@@ -333,7 +333,7 @@ export function Analytics() {
                           )}
                           <div className="w-full bg-gray-100 dark:bg-white/10 rounded-full h-2">
                             <div
-                              className="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full transition-all duration-500"
+                              className="bg-gradient-to-r from-[#c83a32] to-[#dd9d66] dark:from-[#d7a36f] dark:to-[#7fb2a8] h-2 rounded-full transition-all duration-500"
                               style={{ width: `${(cat.total / maxTotal) * 100}%` }}
                             />
                           </div>
@@ -351,7 +351,7 @@ export function Analytics() {
                           </div>
                           <div className="w-full bg-gray-100 dark:bg-white/10 rounded-full h-2">
                             <div
-                              className="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full transition-all duration-500"
+                              className="bg-gradient-to-r from-[#c83a32] to-[#dd9d66] dark:from-[#d7a36f] dark:to-[#7fb2a8] h-2 rounded-full transition-all duration-500"
                               style={{ width: `${(cat.count / maxCount) * 100}%` }}
                             />
                           </div>
@@ -402,7 +402,7 @@ export function Analytics() {
             {/* 세션 목록 */}
             <GlassCard className="p-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2.5 bg-indigo-100/50 dark:bg-indigo-900/30 rounded-xl text-indigo-600 dark:text-indigo-400">
+                <div className="p-2.5 bg-[#e8ded1] dark:bg-[#4a3327]/45 rounded-lg text-[#c83a32] dark:text-[#d7a36f]">
                   <Calendar size={20} />
                 </div>
                 <div>
@@ -445,7 +445,7 @@ export function Analytics() {
               {/* 키워드 반복 순위 */}
               <GlassCard className="p-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2.5 bg-purple-100/50 dark:bg-purple-900/30 rounded-xl text-purple-600 dark:text-purple-400">
+                  <div className="p-2.5 bg-[#dce8e3] dark:bg-[#263d38]/52 rounded-lg text-[#1f6f68] dark:text-[#7fb2a8]">
                     <Repeat2 size={20} />
                   </div>
                   <div>
@@ -469,7 +469,7 @@ export function Analytics() {
                       <span className="text-xs text-gray-400 dark:text-white/30 flex-shrink-0 w-10 text-right">{k.appearance_count}회</span>
                       <div className="w-14 h-1 bg-black/10 dark:bg-white/[0.07] rounded-full overflow-hidden flex-shrink-0">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-indigo-400 to-purple-400"
+                          className="h-full rounded-full bg-gradient-to-r from-[#c83a32] to-[#dd9d66] dark:from-[#d7a36f] dark:to-[#7fb2a8]"
                           style={{ width: `${Math.round((k.appearance_count / (keywords[0]?.appearance_count || 1)) * 100)}%` }}
                         />
                       </div>

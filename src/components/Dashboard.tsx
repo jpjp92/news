@@ -20,8 +20,8 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
   const [showAllSummaries, setShowAllSummaries] = useState(false);
   const [periodStats, setPeriodStats] = useState<{ week: PeriodStats; month: PeriodStats } | null>(null);
   const periodCardStyles = {
-    indigo: 'bg-indigo-100/50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400',
-    purple: 'bg-purple-100/50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400',
+    warm: 'bg-[#e8ded1] dark:bg-[#4a3327]/45 text-[#c83a32] dark:text-[#d7a36f]',
+    teal: 'bg-[#dce8e3] dark:bg-[#263d38]/52 text-[#1f6f68] dark:text-[#7fb2a8]',
   };
 
   useEffect(() => {
@@ -70,24 +70,27 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
 
   return (
     <div className="p-3 md:p-4 space-y-5 md:space-y-6 pb-10 w-full overflow-x-hidden">
-      <div className="flex justify-between items-end">
+      <div className="relative overflow-hidden rounded-xl border border-white/70 dark:border-white/[0.08] bg-[linear-gradient(120deg,rgba(255,255,255,0.72),rgba(255,255,255,0.32)),linear-gradient(135deg,rgba(180,211,206,0.78),rgba(240,218,189,0.64)_52%,rgba(221,184,177,0.56))] dark:bg-[linear-gradient(120deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03)),linear-gradient(135deg,rgba(38,61,56,0.72),rgba(74,51,39,0.58)_54%,rgba(35,35,35,0.62))] shadow-[0_16px_38px_rgba(55,50,42,0.07)] dark:shadow-[0_16px_38px_rgba(0,0,0,0.26)] p-4 md:p-6">
+      <div className="flex justify-between items-end gap-4">
         <div className="flex-1 min-w-0">
-          <h1 className="text-lg md:text-2xl font-bold text-gray-800 dark:text-white truncate">일일 뉴스 분석 리포트</h1>
-          <p className="text-xs md:text-base text-gray-600 dark:text-white/70 flex items-center gap-1 flex-wrap">
+          <p className="text-[10px] md:text-xs font-extrabold uppercase tracking-[0.18em] text-[#c83a32] dark:text-[#d7a36f] mb-2">Daily Intelligence</p>
+          <h1 className="text-xl md:text-4xl font-extrabold text-[#202326] dark:text-white tracking-[-0.02em] leading-tight truncate">일일 뉴스 분석 리포트</h1>
+          <p className="text-xs md:text-sm text-[#514c44] dark:text-white/70 flex items-center gap-1 flex-wrap mt-2">
             네이버 뉴스 AI 기반 인사이트
-            {modelUsed && <span className="px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-md text-[10px] md:text-xs font-medium border border-indigo-200 dark:border-indigo-800 shrink-0">{modelUsed}</span>}
+            {modelUsed && <span className="px-1.5 py-0.5 bg-white/45 dark:bg-white/[0.08] text-[#6f6a60] dark:text-[#d8d2c8] rounded-md text-[10px] md:text-xs font-medium border border-white/60 dark:border-white/10 shrink-0">{modelUsed}</span>}
             {collectedAt && <span className="text-[10px] md:text-xs text-gray-400 dark:text-white/30 shrink-0">{new Date(collectedAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })} 수집</span>}
           </p>
         </div>
         <button 
           onClick={fetchData}
           disabled={loading}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 md:px-4 md:py-2 bg-white/40 dark:bg-slate-800/40 hover:bg-white/60 dark:hover:bg-slate-700/60 backdrop-blur-md border border-white/50 dark:border-white/10 rounded-xl text-indigo-700 dark:text-indigo-400 font-medium transition-all disabled:opacity-50 text-xs md:text-sm shrink-0"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 md:px-4 md:py-2 bg-[#232323] dark:bg-[#d7a36f] hover:bg-[#3a3935] dark:hover:bg-[#e0b481] backdrop-blur-md border border-[#232323] dark:border-[#d7a36f] rounded-lg text-white dark:text-[#111316] font-medium transition-all disabled:opacity-50 text-xs md:text-sm shrink-0"
         >
           <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
           <span className="hidden xs:inline">새로고침</span>
           <span className="xs:hidden">갱신</span>
         </button>
+      </div>
       </div>
 
       {error && (
@@ -119,8 +122,8 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
 
       {/* Stats Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-        <GlassCard className="p-3 md:p-5 flex flex-col md:flex-row items-center gap-2 md:gap-4 text-center md:text-left">
-          <div className="p-2 md:p-3 bg-indigo-100/50 dark:bg-indigo-900/30 rounded-xl text-indigo-600 dark:text-indigo-400">
+        <GlassCard className="p-3 md:p-5 flex flex-col md:flex-row items-center gap-2 md:gap-4 text-center md:text-left bg-white/58 dark:bg-white/[0.055]">
+          <div className="p-2 md:p-3 bg-[#e8ded1] dark:bg-[#4a3327]/45 rounded-lg text-[#c83a32] dark:text-[#d7a36f]">
             <BookOpen size={20} className="md:w-6 md:h-6" />
           </div>
           <div className="min-w-0">
@@ -131,32 +134,32 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
           </div>
         </GlassCard>
 
-        <GlassCard className="p-3 md:p-5 flex flex-col md:flex-row items-center gap-2 md:gap-4 text-center md:text-left">
-          <div className="p-2 md:p-3 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-xl text-emerald-600 dark:text-emerald-400">
+        <GlassCard className="p-3 md:p-5 flex flex-col md:flex-row items-center gap-2 md:gap-4 text-center md:text-left bg-white/58 dark:bg-white/[0.055]">
+          <div className="p-2 md:p-3 bg-[#dce8e3] dark:bg-emerald-900/30 rounded-lg text-[#1f6f68] dark:text-emerald-400">
             <TrendingUp size={20} className="md:w-6 md:h-6" />
           </div>
           <div className="min-w-0">
             <p className="text-[10px] md:text-xs font-medium text-gray-500 dark:text-white/60 truncate">기사 긍정 비율</p>
-            <h3 className="text-lg md:text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+            <h3 className="text-lg md:text-3xl font-bold text-[#1f6f68] dark:text-emerald-400">
               {loading ? '..' : `${sentimentStats.posPct}%`}
             </h3>
           </div>
         </GlassCard>
 
-        <GlassCard className="p-3 md:p-5 flex flex-col md:flex-row items-center gap-2 md:gap-4 text-center md:text-left">
-          <div className="p-2 md:p-3 bg-rose-100/50 dark:bg-rose-900/30 rounded-xl text-rose-600 dark:text-rose-400">
+        <GlassCard className="p-3 md:p-5 flex flex-col md:flex-row items-center gap-2 md:gap-4 text-center md:text-left bg-white/58 dark:bg-white/[0.055]">
+          <div className="p-2 md:p-3 bg-[#ead9d3] dark:bg-rose-900/30 rounded-lg text-[#c83a32] dark:text-rose-400">
             <TrendingDown size={20} className="md:w-6 md:h-6" />
           </div>
           <div className="min-w-0">
             <p className="text-[10px] md:text-xs font-medium text-gray-500 dark:text-white/60 truncate">기사 부정 비율</p>
-            <h3 className="text-lg md:text-3xl font-bold text-rose-500 dark:text-rose-400">
+            <h3 className="text-lg md:text-3xl font-bold text-[#c83a32] dark:text-rose-400">
               {loading ? '..' : `${sentimentStats.negPct}%`}
             </h3>
           </div>
         </GlassCard>
 
-        <GlassCard className="p-3 md:p-5 flex flex-col md:flex-row items-center gap-2 md:gap-4 text-center md:text-left">
-          <div className="p-2 md:p-3 bg-purple-100/50 dark:bg-purple-900/30 rounded-xl text-purple-600 dark:text-purple-400">
+        <GlassCard className="p-3 md:p-5 flex flex-col md:flex-row items-center gap-2 md:gap-4 text-center md:text-left bg-white/58 dark:bg-white/[0.055]">
+          <div className="p-2 md:p-3 bg-[#ebe8df] dark:bg-white/[0.07] rounded-lg text-[#6f6a60] dark:text-[#b8b0a5]">
             <Hash size={20} className="md:w-6 md:h-6" />
           </div>
           <div className="min-w-0">
@@ -172,8 +175,8 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
       {periodStats && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
           {[
-            { label: '주간 통계', sublabel: '최근 7일', icon: <CalendarDays size={16} />, stats: periodStats.week, color: 'indigo' as const },
-            { label: '월간 통계', sublabel: '최근 30일', icon: <BarChart3 size={16} />, stats: periodStats.month, color: 'purple' as const },
+            { label: '주간 통계', sublabel: '최근 7일', icon: <CalendarDays size={16} />, stats: periodStats.week, color: 'warm' as const },
+            { label: '월간 통계', sublabel: '최근 30일', icon: <BarChart3 size={16} />, stats: periodStats.month, color: 'teal' as const },
           ].map(({ label, sublabel, icon, stats, color }) => (
             <GlassCard key={label} className="p-3 md:p-4 flex items-center gap-3 md:gap-4">
               <div className={`p-2.5 rounded-xl flex-shrink-0 ${periodCardStyles[color]}`}>
@@ -203,7 +206,7 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
               </div>
               <button
                 onClick={() => setActiveTab?.('analytics')}
-                className="text-xs text-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors flex-shrink-0"
+                className="text-xs text-[#c83a32] dark:text-[#d7a36f] hover:text-[#9f2f2a] dark:hover:text-[#e0b481] transition-colors flex-shrink-0"
               >
                 <ArrowRight size={14} />
               </button>
@@ -227,10 +230,9 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
             />
           </GlassCard>
           
-          <GlassCard className="p-4 md:p-6 overflow-hidden border-indigo-200/30 dark:border-indigo-500/20 relative">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+          <GlassCard className="p-4 md:p-6 overflow-hidden border-[#ded9cf] dark:border-white/[0.1] relative">
             <div className="flex items-center gap-2 mb-4">
-              <div className="p-2 bg-indigo-100/50 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400">
+              <div className="p-2 bg-[#e8ded1] dark:bg-[#4a3327]/45 rounded-lg text-[#c83a32] dark:text-[#d7a36f]">
                 <Sparkles size={18} />
               </div>
               <h3 className="text-xs md:text-sm font-bold text-gray-800 dark:text-white">전체 뉴스 트렌드 분석</h3>
@@ -243,7 +245,7 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
               </div>
             ) : (
               <div className="relative">
-                <div className="absolute -left-3 top-0 bottom-0 w-1 bg-indigo-500/20 rounded-full"></div>
+                <div className="absolute -left-3 top-0 bottom-0 w-1 bg-[#c83a32]/25 rounded-full"></div>
                 <p className="text-xs md:text-base text-gray-700 dark:text-slate-200 leading-relaxed font-medium pl-2 italic">
                   "{data?.overallTrend || "현재 분석된 주요 뉴스 트렌드가 없습니다."}"
                 </p>
@@ -252,7 +254,7 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
                     {data.trendDrivers.slice(0, 5).map(driver => (
                       <span
                         key={driver}
-                        className="px-2 py-1 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 text-xs font-medium border border-indigo-100 dark:border-indigo-500/20"
+                        className="px-2 py-1 rounded-full bg-[#f2f0ea] dark:bg-white/[0.07] text-[#6f6a60] dark:text-[#d8d2c8] text-xs font-medium border border-[#ded9cf] dark:border-white/10"
                       >
                         #{driver}
                       </span>
@@ -273,7 +275,7 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
                 {data && data.summaries.length > 5 && (
                   <button
                     onClick={() => setShowAllSummaries(!showAllSummaries)}
-                    className="text-[11px] md:text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-0.5 font-medium transition-colors whitespace-nowrap"
+                    className="text-[11px] md:text-xs text-[#c83a32] hover:text-[#9f2f2a] flex items-center gap-0.5 font-medium transition-colors whitespace-nowrap"
                   >
                     {showAllSummaries ? (
                       <><ChevronUp size={13} />축소</>
@@ -285,7 +287,7 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
                 {setActiveTab && (
                   <button
                     onClick={() => setActiveTab('articles')}
-                    className="text-[11px] md:text-xs text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 flex items-center gap-0.5 font-medium transition-colors whitespace-nowrap"
+                    className="text-[11px] md:text-xs text-[#1f6f68] dark:text-[#7fb2a8] hover:text-[#15534e] dark:hover:text-[#9ccbc2] flex items-center gap-0.5 font-medium transition-colors whitespace-nowrap"
                   >
                     전체 기사 <ArrowRight size={13} />
                   </button>
@@ -308,13 +310,13 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
                   <div 
                     key={idx} 
                     onClick={() => setActiveTab?.('articles')}
-                    className="p-3 md:p-4 rounded-xl bg-white/20 dark:bg-white/5 border border-white/30 dark:border-white/10 hover:bg-white/40 dark:hover:bg-white/10 transition-colors cursor-pointer group"
+                    className="p-3 md:p-4 rounded-lg bg-white/32 dark:bg-white/5 border border-[#ded9cf] dark:border-white/10 hover:bg-white/55 dark:hover:bg-white/10 transition-colors cursor-pointer group"
                   >
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="px-2 py-0.5 md:px-2.5 md:py-1 text-[10px] md:text-xs font-semibold bg-indigo-100/50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-full">
+                      <span className="px-2 py-0.5 md:px-2.5 md:py-1 text-[10px] md:text-xs font-semibold bg-[#ebe8df] dark:bg-white/[0.08] text-[#6f6a60] dark:text-[#d8d2c8] rounded-full">
                         {item.category}
                       </span>
-                      <h4 className="text-xs md:text-base font-bold text-gray-800 dark:text-slate-100 line-clamp-1 flex-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" title={item.title}>
+                      <h4 className="text-xs md:text-base font-bold text-gray-800 dark:text-slate-100 line-clamp-1 flex-1 group-hover:text-[#c83a32] dark:group-hover:text-[#d7a36f] transition-colors" title={item.title}>
                         {item.title}
                       </h4>
                     </div>
@@ -340,10 +342,10 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
                 </div>
               ) : (
                 data?.categories?.map((cat, idx) => (
-                  <div key={idx} className="p-3 rounded-xl bg-white/20 dark:bg-white/5 border border-white/30 dark:border-white/10">
+                  <div key={idx} className="p-3 rounded-lg bg-white/32 dark:bg-white/5 border border-[#ded9cf] dark:border-white/10">
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-xs md:text-base font-medium text-gray-700 dark:text-slate-300">{cat.name}</span>
-                      <span className="text-xs md:text-base font-bold text-indigo-600 dark:text-indigo-400 flex-shrink-0">{cat.count}개</span>
+                      <span className="text-xs md:text-base font-bold text-[#c83a32] dark:text-[#d7a36f] flex-shrink-0">{cat.count}개</span>
                     </div>
                     {cat.dominantIssue && (
                       <p className="text-xs text-gray-500 dark:text-white/40 mt-1 line-clamp-2">{cat.dominantIssue}</p>
@@ -387,7 +389,7 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
                     </span>
                     <div className="w-16 h-1 bg-black/10 dark:bg-white/[0.07] rounded-full overflow-hidden flex-shrink-0">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-indigo-400 to-purple-400"
+                        className="h-full rounded-full bg-gradient-to-r from-[#c83a32] to-[#dd9d66]"
                         style={{ width: `${Math.round((topic.score / maxScore) * 100)}%` }}
                       />
                     </div>
