@@ -317,9 +317,22 @@ function dateFromYmd(ymd: string) {
 
 function numericValue(value: unknown) {
   if (value === undefined || value === null) return null;
-  if (value === '강수없음' || value === '적설없음') return 0;
-  const parsed = Number(String(value).replace(/[^\d.-]/g, ''));
-  return Number.isFinite(parsed) ? parsed : null;
+  const text = String(value).trim();
+  if (!text) return null;
+  if (text.includes('없음')) return 0;
+
+  const range = text.match(/(-?\d+(?:\.\d+)?)\s*~\s*(-?\d+(?:\.\d+)?)/);
+  if (range) {
+    return (Number(range[1]) + Number(range[2])) / 2;
+  }
+
+  const firstNumber = text.match(/-?\d+(?:\.\d+)?/);
+  if (!firstNumber) return null;
+
+  const parsed = Number(firstNumber[0]);
+  if (!Number.isFinite(parsed)) return null;
+  if (text.includes('미만')) return parsed / 2;
+  return parsed;
 }
 
 function dominantWeather(entries: WeatherEntry[]) {
@@ -620,6 +633,7 @@ function summarizeKmaDaily(villageRows: KmaApiItem[]): DailyWeather[] {
 function kmaNotes(currentValues: Record<string, string>, firstDaily?: DailyWeather, landMessage?: KmaApiItem) {
   const notes: string[] = [];
   const rain = numericValue(currentValues.RN1) || 0;
+  const expectedPrecipitation = (firstDaily?.rainMm || 0) + (firstDaily?.snowMm || 0);
   const wind = numericValue(currentValues.WSD) || 0;
 
   if (firstDaily && firstDaily.precipitationChance >= 50) {
@@ -627,6 +641,8 @@ function kmaNotes(currentValues: Record<string, string>, firstDaily?: DailyWeath
   }
   if (rain > 0) {
     notes.push(`최근 1시간 강수량은 ${rain}mm입니다.`);
+  } else if (expectedPrecipitation > 0) {
+    notes.push(`오늘 예상 강수량은 약 ${Number(expectedPrecipitation.toFixed(1))}mm입니다.`);
   }
   if (wind >= 8) {
     notes.push(`바람이 강한 편입니다. 현재 풍속은 ${wind.toFixed(1)}m/s입니다.`);

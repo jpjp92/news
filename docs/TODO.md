@@ -79,6 +79,7 @@ rankScore = appearance_count * 0.5 + avg_score * 0.4 + recencyScore * 0.1;
 - 초기 KMA 호출 조합: `getUltraSrtNcst + getVilageFcst + getLandFcst`
 - 중기예보(`getMidTa`, `getMidLandFcst`)는 단기예보가 5일을 채우지 못할 때만 backfill
 - 현재 UI는 유지하고 API 응답만 기존 `WeatherData` 계약에 맞게 정규화
+- 강수량은 현재 관측값이 있으면 현재 강수량, 없으면 오늘 예보 강수량을 표시
 
 검증 결과:
 
@@ -91,11 +92,13 @@ rankScore = appearance_count * 0.5 + avg_score * 0.4 + recencyScore * 0.1;
 
 - `app/api/weather/route.ts`에 KMA provider 추가
 - 국내 도시 alias에 `nx`, `ny`, `shortRegId`, `stnId`, `openWeatherQuery` 추가
-- KMA category 코드(`T1H`, `TMP`, `SKY`, `PTY`, `POP`, `REH`, `WSD`, `TMN`, `TMX`, `PCP`, `SNO`)를 UI 필드로 변환
+- KMA category 코드(`T1H`, `RN1`, `TMP`, `SKY`, `PTY`, `POP`, `REH`, `WSD`, `TMN`, `TMX`, `PCP`, `SNO`)를 UI 필드로 변환
+- KMA 강수량 문자열(`강수없음`, `1.0mm 미만`, `30.0~50.0mm` 등)을 숫자로 정규화
 - `source`에 `KMA` 또는 `OpenWeather` 표시
-- 상세 지표는 습도, 풍속, 강수, 강수확률, 구름, 체감온도 중심으로 구성
+- 상세 지표는 습도, 풍속, 강수량, 강수확률, 구름, 체감온도 중심으로 구성
 - 날씨 탭 기본 도시는 `서울`
 - 5일 예보 날짜는 `7/5 (일)` 형식으로 요일 포함
+- 5일 예보 카드에 일별 강수확률과 일별 예상 강수량을 함께 표시
 
 ### [Planned] 날씨 도시명 정규화 Gemini fallback
 

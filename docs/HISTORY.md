@@ -2,6 +2,36 @@
 
 > 최근순 정렬
 
+## 2026-07-06
+
+### 날씨 강수량 표시 및 KMA 강수 파싱 보강
+
+변경 파일:
+
+- `app/api/weather/route.ts`
+- `src/components/Weather.tsx`
+- `README.md`
+- `docs/TODO.md`
+- `docs/HISTORY.md`
+
+변경 내용:
+
+- 상단 날씨 지표의 `강수`를 `강수량`으로 명확히 변경
+- 현재 관측 강수량이 있으면 `nmm 현재`, 현재 관측값이 0이고 오늘 예보 강수량이 있으면 `nmm 예상`으로 표시
+- 5일 예보 카드에 일별 예상 강수량을 추가 표시
+- KMA 강수량 문자열 파싱 보강
+  - `강수없음`, `적설없음`은 0으로 처리
+  - `1.0mm 미만` 같은 미만 표현은 기준값의 절반으로 근사
+  - `30.0~50.0mm` 같은 범위 표현은 중간값으로 근사
+- KMA 요약 문구에서 현재 강수량이 0이고 오늘 예보 강수량이 있으면 예상 강수량을 안내
+
+검증:
+
+- `npm run lint` 통과
+- 로컬 개발 서버 `http://localhost:3020`에서 `GET /api/weather?city=서울` 응답 확인
+  - 현재 환경에서는 KMA API Hub 연결 타임아웃으로 OpenWeather fallback 동작 확인
+  - fallback 응답에서 오늘 예보 강수량 `10.7mm`가 정상 계산됨
+
 ## 2026-07-05
 
 ### KMA/OpenWeather 하이브리드 날씨 API 검증

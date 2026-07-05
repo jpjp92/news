@@ -74,6 +74,10 @@ function iconUrl(icon: string) {
   return `https://openweathermap.org/img/wn/${icon}@2x.png`;
 }
 
+function formatMillimeters(value: number) {
+  return `${Number(value.toFixed(1))}mm`;
+}
+
 function userWeatherError(error: { message: string; code?: string }) {
   if (error.code === 'CITY_NOT_FOUND') {
     return '도시를 찾지 못했습니다. 도시 이름을 영어로 입력해보세요.';
@@ -169,8 +173,11 @@ export function Weather() {
 
   const precipitation = useMemo(() => {
     if (!data) return '0mm';
-    const amount = data.current.rainMm + data.current.snowMm;
-    return `${Number(amount.toFixed(1))}mm`;
+    const currentAmount = data.current.rainMm + data.current.snowMm;
+    const expectedAmount = (data.daily[0]?.rainMm || 0) + (data.daily[0]?.snowMm || 0);
+    if (currentAmount > 0) return `${formatMillimeters(currentAmount)} 현재`;
+    if (expectedAmount > 0) return `${formatMillimeters(expectedAmount)} 예상`;
+    return '0mm';
   }, [data]);
 
   const submitCity = (event: FormEvent) => {
@@ -281,7 +288,7 @@ export function Weather() {
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
             <StatItem icon={<Droplets size={15} />} label="습도" value={`${data.current.humidity}%`} />
             <StatItem icon={<Wind size={15} />} label="풍속" value={`${data.current.windSpeed}m/s`} />
-            <StatItem icon={<CloudRain size={15} />} label="강수" value={precipitation} />
+            <StatItem icon={<CloudRain size={15} />} label="강수량" value={precipitation} />
             <StatItem icon={<CloudRain size={15} />} label="강수확률" value={`${data.daily[0]?.precipitationChance ?? 0}%`} />
             <StatItem icon={<Thermometer size={15} />} label="구름" value={`${data.current.clouds}%`} />
             <StatItem icon={<Thermometer size={15} />} label="체감" value={`${data.current.feelsLike}°C`} />
@@ -308,6 +315,7 @@ export function Weather() {
                   </div>
                   <div className="mt-4 grid grid-cols-2 gap-2 text-[11px] text-gray-500 dark:text-white/40">
                     <span>강수 {day.precipitationChance}%</span>
+                    <span>강수량 {formatMillimeters(day.rainMm + day.snowMm)}</span>
                     <span>습도 {day.avgHumidity}%</span>
                   </div>
                 </div>
