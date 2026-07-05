@@ -4,6 +4,34 @@
 
 ## 2026-07-05
 
+### 핵심 분석 기간 비교 및 전체 누적 키워드 보강
+
+#### 변경 파일
+
+- `app/api/history/compare/route.ts`
+- `src/lib/server/newsService.ts`
+- `src/components/Analytics.tsx`
+
+#### 변경 내용
+
+- `GET /api/history/compare?period=today|7d|30d` 추가
+  - 현재 기간과 직전 동일 기간의 기사 수, 수집 세션 수, 긍정/부정 비율 비교
+  - 신규 키워드, 소멸 키워드, 급상승 키워드 계산
+  - 잘못된 period는 400 반환
+- Analytics `오늘`, `7일`, `30일` 탭 상단에 `기간 대비 변화 요약` 카드 추가
+- Analytics `전체` 탭에 `전체 누적 키워드 요약` 카드 추가
+  - 반복 키워드 수, 긍정/부정 우세 키워드 수, 최다 등장 키워드, 누적 TOP 키워드 표시
+- `GET /api/history/keywords` 응답을 TOP 10에서 TOP 20까지 확장
+
+#### 검증
+
+- `npm run lint` 통과
+- `/api/history/compare?period=7d` 정상 응답 확인
+- `/api/history/compare?period=bad` 400 반환 확인
+- `/api/history/keywords?period=all` 정상 응답 및 20개 반환 확인
+
+---
+
 ### Warm Swiss 하이브리드 UI 개편
 
 #### 변경 파일

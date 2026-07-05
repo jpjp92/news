@@ -374,6 +374,31 @@ function getPeriodStart(period: string): string {
   return new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
 }
 
+function getComparisonRanges(period: 'today' | '7d' | '30d') {
+  const now = new Date();
+  const dayMs = 24 * 60 * 60 * 1000;
+
+  if (period === 'today') {
+    const KST_OFFSET = 9 * 60 * 60 * 1000;
+    const kstNow = new Date(now.getTime() + KST_OFFSET);
+    kstNow.setUTCHours(0, 0, 0, 0);
+    const currentStart = new Date(kstNow.getTime() - KST_OFFSET);
+    const previousStart = new Date(currentStart.getTime() - dayMs);
+    return {
+      current: { start: currentStart.toISOString(), end: now.toISOString() },
+      previous: { start: previousStart.toISOString(), end: currentStart.toISOString() },
+    };
+  }
+
+  const days = period === '30d' ? 30 : 7;
+  const currentStart = new Date(now.getTime() - days * dayMs);
+  const previousStart = new Date(now.getTime() - days * 2 * dayMs);
+  return {
+    current: { start: currentStart.toISOString(), end: now.toISOString() },
+    previous: { start: previousStart.toISOString(), end: currentStart.toISOString() },
+  };
+}
+
 function clampArticleLimit(limit?: number): number {
   if (!limit || Number.isNaN(limit)) return 18;
   return Math.min(30, Math.max(6, Math.round(limit / 6) * 6));
@@ -725,7 +750,7 @@ export async function getKeywords(period: string) {
             : 'neutral',
     }))
     .sort((a, b) => b.appearance_count - a.appearance_count || b.avg_score - a.avg_score)
-    .slice(0, 10);
+    .slice(0, 20);
 
   return { success: true, data };
 }
@@ -883,6 +908,158 @@ export async function getStats() {
   if (!supabase) return { success: false, error: 'DB not connected' };
   const [week, month] = await Promise.all([getStatsByPeriod('7d'), getStatsByPeriod('30d')]);
   return { success: true, data: { week, month } };
+}
+
+async function getCompareBucket(start: string, end: string) {
+  if (!supabase) {
+    return {
+      session_count: 0,
+      article_count: 0,
+      positive_pct: null as number | null,
+      negative_pct: null as number | null,
+      keywords: [] as {
+        keyword: string;
+        appearance_count: number;
+        avg_score: number;
+        dominant_sentiment: 'positive' | 'negative' | 'neutral';
+      }[],
+    };
+  }
+
+  const { data: sessions, error: sErr } = await supabase
+    .from('news_sessions')
+    .select('id')
+    .eq('is_error', false)
+    .gt('article_count', 0)
+    .gte('collected_at', start)
+    .lt('collected_at', end);
+
+  if (sErr || !sessions?.length) {
+    return {
+      session_count: 0,
+      article_count: 0,
+      positive_pct: null,
+      negative_pct: null,
+      keywords: [],
+    };
+  }
+
+  const sessionIds = sessions.map(s => s.id);
+  const [{ count: totalArticles }, { data: keywords }] = await Promise.all([
+    supabase
+      .from('article_summaries')
+      .select('id', { count: 'exact', head: true })
+      .in('session_id', sessionIds)
+      .not('url', 'is', null)
+      .neq('url', ''),
+    supabase
+      .from('keyword_stats')
+      .select('keyword, score, sentiment')
+      .in('session_id', sessionIds),
+  ]);
+
+  const sentimentTotal = keywords?.length || 0;
+  const positive = keywords?.filter(k => k.sentiment === 'positive').length || 0;
+  const negative = keywords?.filter(k => k.sentiment === 'negative').length || 0;
+
+  const keywordMap = new Map<string, { count: number; totalScore: number; pos: number; neg: number; neu: number }>();
+  for (const item of keywords || []) {
+    const keyword = String(item.keyword || '').trim();
+    if (!keyword) continue;
+    const entry = keywordMap.get(keyword) || { count: 0, totalScore: 0, pos: 0, neg: 0, neu: 0 };
+    entry.count++;
+    entry.totalScore += Number(item.score) || 0;
+    if (item.sentiment === 'positive') entry.pos++;
+    else if (item.sentiment === 'negative') entry.neg++;
+    else entry.neu++;
+    keywordMap.set(keyword, entry);
+  }
+
+  const keywordRows = Array.from(keywordMap.entries())
+    .map(([keyword, v]) => ({
+      keyword,
+      appearance_count: v.count,
+      avg_score: Math.round((v.totalScore / v.count) * 10) / 10,
+      dominant_sentiment:
+        v.pos >= v.neg && v.pos >= v.neu
+          ? 'positive' as const
+          : v.neg >= v.pos && v.neg >= v.neu
+            ? 'negative' as const
+            : 'neutral' as const,
+    }))
+    .sort((a, b) => b.appearance_count - a.appearance_count || b.avg_score - a.avg_score);
+
+  return {
+    session_count: sessions.length,
+    article_count: totalArticles || 0,
+    positive_pct: sentimentTotal > 0 ? Math.round((positive / sentimentTotal) * 100) : null,
+    negative_pct: sentimentTotal > 0 ? Math.round((negative / sentimentTotal) * 100) : null,
+    keywords: keywordRows,
+  };
+}
+
+export async function getCompare(period: 'today' | '7d' | '30d') {
+  if (!supabase) return { success: false, error: 'DB not connected' };
+
+  const ranges = getComparisonRanges(period);
+  const [current, previous] = await Promise.all([
+    getCompareBucket(ranges.current.start, ranges.current.end),
+    getCompareBucket(ranges.previous.start, ranges.previous.end),
+  ]);
+
+  const previousKeywordMap = new Map(previous.keywords.map(k => [k.keyword, k]));
+  const currentKeywordMap = new Map(current.keywords.map(k => [k.keyword, k]));
+  const newKeywords = current.keywords
+    .filter(k => !previousKeywordMap.has(k.keyword))
+    .slice(0, 5);
+  const disappearedKeywords = previous.keywords
+    .filter(k => !currentKeywordMap.has(k.keyword))
+    .slice(0, 5);
+  const risingKeywords = current.keywords
+    .map(k => {
+      const prev = previousKeywordMap.get(k.keyword);
+      const appearance_delta = k.appearance_count - (prev?.appearance_count || 0);
+      const score_delta = Math.round((k.avg_score - (prev?.avg_score || 0)) * 10) / 10;
+      return { ...k, appearance_delta, score_delta };
+    })
+    .filter(k => k.appearance_delta > 0 || k.score_delta > 0)
+    .sort((a, b) => b.appearance_delta - a.appearance_delta || b.score_delta - a.score_delta)
+    .slice(0, 5);
+
+  return {
+    success: true,
+    data: {
+      period,
+      ranges,
+      current: {
+        session_count: current.session_count,
+        article_count: current.article_count,
+        positive_pct: current.positive_pct,
+        negative_pct: current.negative_pct,
+      },
+      previous: {
+        session_count: previous.session_count,
+        article_count: previous.article_count,
+        positive_pct: previous.positive_pct,
+        negative_pct: previous.negative_pct,
+      },
+      delta: {
+        article_count: current.article_count - previous.article_count,
+        session_count: current.session_count - previous.session_count,
+        positive_pct:
+          current.positive_pct != null && previous.positive_pct != null
+            ? current.positive_pct - previous.positive_pct
+            : null,
+        negative_pct:
+          current.negative_pct != null && previous.negative_pct != null
+            ? current.negative_pct - previous.negative_pct
+            : null,
+      },
+      new_keywords: newKeywords,
+      disappeared_keywords: disappearedKeywords,
+      rising_keywords: risingKeywords,
+    },
+  };
 }
 
 export async function getCategoryTotals(period: string) {

@@ -5,26 +5,9 @@
 
 ## High Priority
 
-### [Planned] 기간 대비 변화 요약 추가
-
-핵심 분석의 `오늘`, `7일`, `30일` 탭에서 현재 기간과 직전 동일 기간을 비교한다.
-
-표시 후보:
-
-- 기사 수 증감: `+12%`, `-8%`
-- 긍정 비율 증감: `+5%p`, `-3%p`
-- 신규 급상승 키워드
-- 감소하거나 사라진 키워드
-
-구현 범위:
-
-- `GET /api/history/compare?period=today|7d|30d` 추가
-- `src/lib/server/newsService.ts`에 기간 비교 집계 함수 추가
-- `src/components/Analytics.tsx` 상단에 요약 카드 추가
-
 ### [Planned] 반복 키워드 랭킹 고도화
 
-현재 반복 키워드는 `appearance_count` 중심이라 빈번하지만 중요도가 낮은 키워드가 상단에 노출될 수 있다.
+현재 반복 키워드는 `appearance_count`와 `avg_score` 중심이라 빈번하지만 중요도가 낮은 키워드가 상단에 노출될 수 있다. Analytics는 TOP 20까지 표시하지만, 정렬 공식은 아직 단순하다.
 
 개선 방향:
 

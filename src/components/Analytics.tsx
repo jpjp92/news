@@ -5,6 +5,7 @@ import { BarChart3, TrendingUp, RefreshCw, AlertCircle, PieChart, Activity, Cale
 import { useNews } from '../context/NewsContext';
 
 type Period = 'current' | 'today' | '7d' | '30d' | 'all';
+type ComparePeriod = 'today' | '7d' | '30d';
 
 interface Session {
   id: string;
@@ -37,6 +38,40 @@ interface CategoryTotal {
   avg_sentiment: number | null;
 }
 
+interface CompareKeyword {
+  keyword: string;
+  appearance_count: number;
+  avg_score: number;
+  dominant_sentiment: 'positive' | 'negative' | 'neutral';
+  appearance_delta?: number;
+  score_delta?: number;
+}
+
+interface CompareData {
+  period: ComparePeriod;
+  current: {
+    session_count: number;
+    article_count: number;
+    positive_pct: number | null;
+    negative_pct: number | null;
+  };
+  previous: {
+    session_count: number;
+    article_count: number;
+    positive_pct: number | null;
+    negative_pct: number | null;
+  };
+  delta: {
+    article_count: number;
+    session_count: number;
+    positive_pct: number | null;
+    negative_pct: number | null;
+  };
+  new_keywords: CompareKeyword[];
+  disappeared_keywords: CompareKeyword[];
+  rising_keywords: CompareKeyword[];
+}
+
 const PERIOD_LABELS: Record<Period, string> = {
   current: '현재 세션',
   today: '오늘',
@@ -55,6 +90,82 @@ function formatDay(dateStr: string) {
   return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
+function formatSigned(value: number, suffix = '') {
+  if (value > 0) return `+${value}${suffix}`;
+  return `${value}${suffix}`;
+}
+
+function deltaTone(value: number | null, inverse = false) {
+  if (value == null || value === 0) return 'text-gray-400 dark:text-white/35';
+  const positive = inverse ? value < 0 : value > 0;
+  return positive ? 'text-[#1f6f68] dark:text-[#7fb2a8]' : 'text-[#c83a32] dark:text-[#d7a36f]';
+}
+
+function CompareKeywordList({
+  title,
+  empty,
+  items,
+  variant,
+}: {
+  title: string;
+  empty: string;
+  items: CompareKeyword[];
+  variant: 'rising' | 'new' | 'gone';
+}) {
+  const tone =
+    variant === 'gone'
+      ? 'text-[#c83a32] dark:text-[#d7a36f]'
+      : variant === 'new'
+        ? 'text-[#1f6f68] dark:text-[#7fb2a8]'
+        : 'text-[#b77818] dark:text-[#d7a36f]';
+
+  return (
+    <div className="rounded-lg border border-[#ded9cf] dark:border-white/10 bg-white/26 dark:bg-white/[0.035] p-3">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <h3 className="text-xs font-bold text-gray-700 dark:text-white/80">{title}</h3>
+        <span className="text-[10px] text-gray-400 dark:text-white/30">{items.length}개</span>
+      </div>
+      {items.length === 0 ? (
+        <p className="text-xs text-gray-400 dark:text-white/30 py-2">{empty}</p>
+      ) : (
+        <div className="space-y-2">
+          {items.slice(0, 4).map(item => (
+            <div key={`${title}-${item.keyword}`} className="flex items-center justify-between gap-2">
+              <span className="min-w-0 truncate text-xs font-medium text-gray-700 dark:text-white/75">{item.keyword}</span>
+              <span className={`shrink-0 text-[11px] font-bold ${tone}`}>
+                {variant === 'rising' && item.appearance_delta != null
+                  ? formatSigned(item.appearance_delta)
+                  : `${item.avg_score}`}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ChartLoadingState({ label = '트렌드 데이터 로드 중' }: { label?: string }) {
+  return (
+    <div className="h-full min-h-[220px] flex flex-col items-center justify-center rounded-xl border border-dashed border-[#ded9cf] dark:border-white/10 bg-white/20 dark:bg-white/[0.03]">
+      <div className="relative mb-4 h-10 w-10">
+        <div className="absolute inset-0 rounded-full border-2 border-[#ded9cf] dark:border-white/10" />
+        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[#c83a32] dark:border-t-[#d7a36f] animate-spin" />
+      </div>
+      <p className="text-xs font-semibold text-gray-500 dark:text-white/45">{label}</p>
+      <div className="mt-5 flex h-16 items-end gap-2">
+        {[36, 52, 44, 70, 58, 82, 64].map((height, idx) => (
+          <div
+            key={idx}
+            className="w-4 rounded-t-md bg-[#ded9cf]/70 dark:bg-white/[0.08] animate-pulse"
+            style={{ height }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function Analytics() {
   const { data, loading, error, fetchData } = useNews();
   const [period, setPeriod] = useState<Period>('current');
@@ -66,7 +177,10 @@ export function Analytics() {
   const [retryKey, setRetryKey] = useState(0);
   const [categoryTotals, setCategoryTotals] = useState<CategoryTotal[]>([]);
   const [overviewTrend, setOverviewTrend] = useState<SentimentDay[]>([]);
+  const [overviewLoading, setOverviewLoading] = useState(true);
   const [showAllTopics, setShowAllTopics] = useState(false);
+  const [compareData, setCompareData] = useState<CompareData | null>(null);
+  const [compareLoading, setCompareLoading] = useState(false);
 
   // 마운트 시 전체 카테고리 집계 + 7d 트렌드 로드
   useEffect(() => {
@@ -77,7 +191,8 @@ export function Analytics() {
     ]).then(([cats, trend]) => {
       if (cats.success) setCategoryTotals(cats.data);
       if (trend.success) setOverviewTrend(trend.data);
-    }).catch(() => {});
+    }).catch(() => {})
+      .finally(() => setOverviewLoading(false));
   }, []);
 
   useEffect(() => {
@@ -109,6 +224,27 @@ export function Analytics() {
         else setHistError('네트워크 연결을 확인해주세요.');
       })
       .finally(() => setHistLoading(false));
+  }, [period, retryKey]);
+
+  useEffect(() => {
+    if (!['today', '7d', '30d'].includes(period)) {
+      setCompareData(null);
+      return;
+    }
+
+    setCompareLoading(true);
+    fetch(`/api/history/compare?period=${period}`)
+      .then(r => {
+        if (!r.ok) throw Object.assign(new Error(), { status: r.status });
+        return r.json();
+      })
+      .then(json => {
+        setCompareData(json.success ? json.data : null);
+      })
+      .catch(() => {
+        setCompareData(null);
+      })
+      .finally(() => setCompareLoading(false));
   }, [period, retryKey]);
 
   const overviewChartData = useMemo(() =>
@@ -194,6 +330,141 @@ export function Analytics() {
               다시 시도
             </button>
           )}
+        </GlassCard>
+      )}
+
+      {compareLoading && period !== 'current' && period !== 'all' && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 animate-pulse">
+          <GlassCard className="h-24 bg-gray-200/40 dark:bg-white/[0.04]" />
+          <GlassCard className="h-24 bg-gray-200/40 dark:bg-white/[0.04]" />
+          <GlassCard className="h-24 bg-gray-200/40 dark:bg-white/[0.04]" />
+        </div>
+      )}
+
+      {!compareLoading && compareData && (
+        <GlassCard className="p-4 md:p-5">
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div>
+              <h2 className="text-sm md:text-base font-bold text-gray-800 dark:text-white">기간 대비 변화 요약</h2>
+              <p className="text-xs text-gray-500 dark:text-white/40 mt-0.5">
+                {PERIOD_LABELS[compareData.period]} 데이터를 직전 동일 기간과 비교합니다
+              </p>
+            </div>
+            <span className="shrink-0 rounded-full bg-[#ebe8df] dark:bg-white/[0.07] px-2.5 py-1 text-[10px] font-bold text-[#6f6a60] dark:text-[#d8d2c8]">
+              vs 이전 기간
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="rounded-lg border border-[#ded9cf] dark:border-white/10 bg-white/32 dark:bg-white/[0.04] p-3">
+              <p className="text-[11px] font-semibold text-gray-500 dark:text-white/40">기사 수</p>
+              <div className="mt-2 flex items-end justify-between gap-2">
+                <span className="text-xl font-bold text-gray-800 dark:text-white">{compareData.current.article_count}</span>
+                <span className={`text-xs font-bold ${deltaTone(compareData.delta.article_count)}`}>
+                  {formatSigned(compareData.delta.article_count)}
+                </span>
+              </div>
+            </div>
+            <div className="rounded-lg border border-[#ded9cf] dark:border-white/10 bg-white/32 dark:bg-white/[0.04] p-3">
+              <p className="text-[11px] font-semibold text-gray-500 dark:text-white/40">수집 세션</p>
+              <div className="mt-2 flex items-end justify-between gap-2">
+                <span className="text-xl font-bold text-gray-800 dark:text-white">{compareData.current.session_count}</span>
+                <span className={`text-xs font-bold ${deltaTone(compareData.delta.session_count)}`}>
+                  {formatSigned(compareData.delta.session_count)}
+                </span>
+              </div>
+            </div>
+            <div className="rounded-lg border border-[#ded9cf] dark:border-white/10 bg-white/32 dark:bg-white/[0.04] p-3">
+              <p className="text-[11px] font-semibold text-gray-500 dark:text-white/40">긍정 비율</p>
+              <div className="mt-2 flex items-end justify-between gap-2">
+                <span className="text-xl font-bold text-gray-800 dark:text-white">
+                  {compareData.current.positive_pct != null ? `${compareData.current.positive_pct}%` : '-'}
+                </span>
+                <span className={`text-xs font-bold ${deltaTone(compareData.delta.positive_pct)}`}>
+                  {compareData.delta.positive_pct != null ? formatSigned(compareData.delta.positive_pct, '%p') : '-'}
+                </span>
+              </div>
+            </div>
+            <div className="rounded-lg border border-[#ded9cf] dark:border-white/10 bg-white/32 dark:bg-white/[0.04] p-3">
+              <p className="text-[11px] font-semibold text-gray-500 dark:text-white/40">부정 비율</p>
+              <div className="mt-2 flex items-end justify-between gap-2">
+                <span className="text-xl font-bold text-gray-800 dark:text-white">
+                  {compareData.current.negative_pct != null ? `${compareData.current.negative_pct}%` : '-'}
+                </span>
+                <span className={`text-xs font-bold ${deltaTone(compareData.delta.negative_pct, true)}`}>
+                  {compareData.delta.negative_pct != null ? formatSigned(compareData.delta.negative_pct, '%p') : '-'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-5">
+            <CompareKeywordList title="급상승 키워드" empty="뚜렷한 상승 키워드 없음" items={compareData.rising_keywords} variant="rising" />
+            <CompareKeywordList title="신규 키워드" empty="새 키워드 없음" items={compareData.new_keywords} variant="new" />
+            <CompareKeywordList title="소멸 키워드" empty="사라진 키워드 없음" items={compareData.disappeared_keywords} variant="gone" />
+          </div>
+        </GlassCard>
+      )}
+
+      {period === 'all' && keywords.length > 0 && (
+        <GlassCard className="p-4 md:p-5">
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div>
+              <h2 className="text-sm md:text-base font-bold text-gray-800 dark:text-white">전체 누적 키워드 요약</h2>
+              <p className="text-xs text-gray-500 dark:text-white/40 mt-0.5">
+                전체 수집 세션에서 반복 등장한 키워드를 집계합니다
+              </p>
+            </div>
+            <span className="shrink-0 rounded-full bg-[#ebe8df] dark:bg-white/[0.07] px-2.5 py-1 text-[10px] font-bold text-[#6f6a60] dark:text-[#d8d2c8]">
+              누적 기준
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+            <div className="rounded-lg border border-[#ded9cf] dark:border-white/10 bg-white/32 dark:bg-white/[0.04] p-3">
+              <p className="text-[11px] font-semibold text-gray-500 dark:text-white/40">반복 키워드</p>
+              <p className="mt-2 text-xl font-bold text-gray-800 dark:text-white">{keywords.length}</p>
+            </div>
+            <div className="rounded-lg border border-[#ded9cf] dark:border-white/10 bg-white/32 dark:bg-white/[0.04] p-3">
+              <p className="text-[11px] font-semibold text-gray-500 dark:text-white/40">긍정 우세</p>
+              <p className="mt-2 text-xl font-bold text-[#1f6f68] dark:text-[#7fb2a8]">
+                {keywords.filter(k => k.dominant_sentiment === 'positive').length}
+              </p>
+            </div>
+            <div className="rounded-lg border border-[#ded9cf] dark:border-white/10 bg-white/32 dark:bg-white/[0.04] p-3">
+              <p className="text-[11px] font-semibold text-gray-500 dark:text-white/40">부정 우세</p>
+              <p className="mt-2 text-xl font-bold text-[#c83a32] dark:text-[#d7a36f]">
+                {keywords.filter(k => k.dominant_sentiment === 'negative').length}
+              </p>
+            </div>
+            <div className="rounded-lg border border-[#ded9cf] dark:border-white/10 bg-white/32 dark:bg-white/[0.04] p-3">
+              <p className="text-[11px] font-semibold text-gray-500 dark:text-white/40">최다 등장</p>
+              <p className="mt-2 truncate text-sm font-bold text-gray-800 dark:text-white" title={keywords[0]?.keyword}>
+                {keywords[0]?.keyword || '-'}
+              </p>
+              <p className="mt-1 text-[11px] text-gray-400 dark:text-white/35">{keywords[0]?.appearance_count || 0}회</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+            {keywords.slice(0, 8).map((keyword, idx) => (
+              <div key={`all-${keyword.keyword}`} className="rounded-lg border border-[#ded9cf] dark:border-white/10 bg-white/26 dark:bg-white/[0.035] p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="text-[10px] text-gray-400 dark:text-white/30 font-mono">{String(idx + 1).padStart(2, '0')}</span>
+                  <span className={`text-[11px] font-bold ${
+                    keyword.dominant_sentiment === 'positive' ? 'text-emerald-500' :
+                    keyword.dominant_sentiment === 'negative' ? 'text-rose-500' : 'text-slate-400'
+                  }`}>
+                    {keyword.dominant_sentiment === 'positive' ? '긍정' : keyword.dominant_sentiment === 'negative' ? '부정' : '중립'}
+                  </span>
+                </div>
+                <p className="mt-2 truncate text-sm font-bold text-gray-800 dark:text-white" title={keyword.keyword}>{keyword.keyword}</p>
+                <p className="mt-1 text-xs text-gray-500 dark:text-white/40">
+                  {keyword.appearance_count}회 · 평균 {keyword.avg_score}
+                </p>
+              </div>
+            ))}
+          </div>
         </GlassCard>
       )}
 
@@ -373,7 +644,13 @@ export function Analytics() {
                   </div>
                 </div>
                 <div className="h-[260px] -mx-6 -mb-6">
-                  <TrendChart data={overviewChartData.length > 0 ? overviewChartData : undefined} transparent hideHeader className="!p-6" />
+                  {overviewLoading ? (
+                    <div className="p-6 h-full">
+                      <ChartLoadingState />
+                    </div>
+                  ) : (
+                    <TrendChart data={overviewChartData.length > 0 ? overviewChartData : undefined} transparent hideHeader className="!p-6" />
+                  )}
                 </div>
               </GlassCard>
             </div>

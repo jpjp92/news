@@ -7,7 +7,8 @@ Next.js 기반 AI 뉴스 트렌드 대시보드입니다. 네이버 뉴스 섹�
 - 네이버 뉴스 6개 섹션 수집: 정치, 경제, 사회, 생활/문화, 세계, IT/과학
 - Gemini 기반 분석: 전체 트렌드, 주요 키워드, 카테고리별 이슈, 기사별 요약/감성
 - 최신 세션 자동 로드: 저장된 최신 정상 세션을 먼저 보여주고, 없으면 1회 자동 분석
-- 히스토리 분석: 오늘, 7일, 30일 기준 세션/키워드/감성/기사 조회
+- 히스토리 분석: 오늘, 7일, 30일, 전체 기준 세션/키워드/감성/기사 조회
+- 기간 비교 분석: 오늘/7일/30일 데이터를 직전 동일 기간과 비교해 기사 수, 감성 비율, 신규·급상승·소멸 키워드 표시
 - Supabase 저장: 세션, 카테고리 통계, 키워드 통계, 기사 요약 분리 저장
 - 반응형 UI: 대시보드, 핵심 분석, 최신뉴스, 설정 화면 제공 및 탭 전환 시 스크롤 위치 초기화
 - 하이브리드 UI: 웜 그레이 기반의 Swiss 정보 구조와 절제된 glass/gradient 포인트를 light/dark mode에 적용
@@ -34,6 +35,7 @@ app/
     news-analysis/route.ts         # 뉴스 수집 + AI 분석 실행
     history/
       articles/route.ts            # 기간별 기사 목록
+      compare/route.ts             # 직전 동일 기간 대비 변화 요약
       category-totals/route.ts     # 카테고리별 누적 집계
       keywords/route.ts            # 반복 키워드 집계
       latest-session/route.ts      # 최신 정상 세션
@@ -136,6 +138,7 @@ Gemini API 429/503 에러 시 `GEMINI_MODELS` 목록의 다음 모델로 자동 
 - `GET /api/history/keywords?period=7d|30d`
 - `GET /api/history/sentiment?period=7d|30d`
 - `GET /api/history/category-totals?period=all|today|7d|30d`
+- `GET /api/history/compare?period=today|7d|30d`
 - `GET /api/history/stats`
 
 ## 데이터 저장 개요
