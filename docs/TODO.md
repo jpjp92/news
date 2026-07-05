@@ -53,6 +53,33 @@ rankScore = appearance_count * 0.5 + avg_score * 0.4 + recencyScore * 0.1;
 
 ## Medium Priority
 
+### [Planned] 날씨 도시명 정규화 Gemini fallback
+
+날씨 탭은 현재 주요 도시 한글 alias와 OpenWeather Geocoding API를 우선 사용한다. alias와 geocoding으로 해결되지 않는 자연어 입력은 Gemini fallback을 검토한다.
+
+대상 입력 예:
+
+- `스페인 수도`
+- `LA`
+- `호치민 근처`
+- `제주도 남쪽`
+
+구현 방향:
+
+- `resolveCity()`의 최후 단계로 Gemini 도시명 정규화 호출
+- 결과는 `{ city, countryCode, confidence }` 형태의 짧은 JSON으로 제한
+- confidence가 낮으면 사용자에게 영어 도시명 입력 안내
+- 자주 성공한 입력은 alias 목록에 편입
+
+### [Planned] 날씨 도시 alias 확장
+
+현재 alias는 주요 국내/해외 도시 중심이다. 사용 로그를 기준으로 자주 실패하는 한글 도시명을 추가한다.
+
+확장 후보:
+
+- 국내: 안양, 안산, 평택, 천안, 원주, 순천, 경주, 진주
+- 해외: 리스본, 이스탄불, 두바이, 뭄바이, 델리, 멕시코시티, 상파울루
+
 ### [Planned] UI 개편 후 시각 검증 정리
 
 2026-07-05 Warm Swiss 하이브리드 UI를 1차 적용했다. 기능 동작은 유지했지만, 실제 사용 데이터 기준의 시각 검증이 남아 있다.
@@ -142,9 +169,10 @@ GEMINI_API_KEY=...
 SUPABASE_URL=...
 SUPABASE_KEY=...
 GEMINI_MODELS=gemini-2.5-flash,gemini-2.5-flash-lite
+OPENWEATHER_API_KEY=...
 ```
 
-누락 시 Gemini 분석 또는 history API가 정상 동작하지 않는다.
+누락 시 Gemini 분석, history API 또는 날씨 탭이 정상 동작하지 않는다.
 
 ### [Idea] 자동 스케줄 크롤링
 

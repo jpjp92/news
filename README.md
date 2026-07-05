@@ -9,8 +9,9 @@ Next.js 기반 AI 뉴스 트렌드 대시보드입니다. 네이버 뉴스 섹�
 - 최신 세션 자동 로드: 저장된 최신 정상 세션을 먼저 보여주고, 없으면 1회 자동 분석
 - 히스토리 분석: 오늘, 7일, 30일, 전체 기준 세션/키워드/감성/기사 조회
 - 기간 비교 분석: 오늘/7일/30일 데이터를 직전 동일 기간과 비교해 기사 수, 감성 비율, 신규·급상승·소멸 키워드 표시
+- 날씨 탭: OpenWeather 기반 현재 날씨와 5일 예보를 표시하고, 주요 한글 도시명을 영문/국가 코드로 정규화
 - Supabase 저장: 세션, 카테고리 통계, 키워드 통계, 기사 요약 분리 저장
-- 반응형 UI: 대시보드, 핵심 분석, 최신뉴스, 설정 화면 제공 및 탭 전환 시 스크롤 위치 초기화
+- 반응형 UI: 대시보드, 핵심 분석, 최신뉴스, 날씨, 설정 화면 제공 및 탭 전환 시 스크롤 위치 초기화
 - 하이브리드 UI: 웜 그레이 기반의 Swiss 정보 구조와 절제된 glass/gradient 포인트를 light/dark mode에 적용
 - 로컬 감성 분류 모델 학습: 누적된 기사 데이터로 한국어 감성 분류 모델(KLUE-RoBERTa 등)을 Colab에서 파인튜닝 (`colab_training/`)
 
@@ -33,6 +34,7 @@ app/
   globals.css                      # 전역 스타일 및 Tailwind
   api/
     news-analysis/route.ts         # 뉴스 수집 + AI 분석 실행
+    weather/route.ts               # OpenWeather 날씨 조회 + 도시명 정규화
     history/
       articles/route.ts            # 기간별 기사 목록
       compare/route.ts             # 직전 동일 기간 대비 변화 요약
@@ -43,7 +45,7 @@ app/
       sessions/route.ts            # 기간별 세션 목록
       stats/route.ts               # 주간/월간 요약 통계
 src/
-  components/                      # Dashboard, Analytics, Articles, Settings 등
+  components/                      # Dashboard, Analytics, Articles, Weather, Settings 등
   context/                         # News, Settings, Theme 전역 상태
   lib/server/
     newsService.ts                 # 수집, 분석, DB 저장/조회 비즈니스 로직
@@ -104,12 +106,14 @@ GEMINI_API_KEY=...
 SUPABASE_URL=...
 SUPABASE_KEY=...
 GEMINI_MODELS=gemini-2.5-flash,gemini-2.5-flash-lite
+OPENWEATHER_API_KEY=...
 ```
 
 - `GEMINI_API_KEY`: Gemini API 호출에 필요합니다.
 - `SUPABASE_URL`: Supabase 프로젝트 URL입니다.
 - `SUPABASE_KEY`: 서버에서 DB 저장/조회에 사용하는 키입니다. 운영 환경에서는 service role 키 사용을 전제로 합니다.
 - `GEMINI_MODELS`: 선택값입니다. 쉼표로 구분된 모델 목록을 순환 사용하며 기본값은 `gemini-2.5-flash,gemini-2.5-flash-lite`입니다. 429/503 등 재시도 가능한 에러 발생 시 목록의 다음 모델로 자동 폴백합니다.
+- `OPENWEATHER_API_KEY`: 선택값입니다. Sidebar의 날씨 탭에서 현재 날씨와 5일 예보를 조회할 때 사용합니다.
 
 ## API
 
@@ -140,6 +144,16 @@ Gemini API 429/503 에러 시 `GEMINI_MODELS` 목록의 다음 모델로 자동 
 - `GET /api/history/category-totals?period=all|today|7d|30d`
 - `GET /api/history/compare?period=today|7d|30d`
 - `GET /api/history/stats`
+
+### 날씨
+
+- `GET /api/weather?city=서울`
+- `GET /api/weather?city=마드리드`
+- `GET /api/weather?city=Madrid`
+
+요청 도시명은 서버에서 먼저 정규화합니다. 주요 한글 도시명은 `Madrid,ES` 같은 OpenWeather 검색어로 매핑하고, 이후 OpenWeather Geocoding API로 위경도를 얻어 현재 날씨와 5일 예보를 조회합니다.
+
+도시를 찾지 못하면 `CITY_NOT_FOUND` 코드를 반환하며, 사용자 UI에는 OpenWeather 내부 오류나 환경 변수명을 노출하지 않습니다.
 
 ## 데이터 저장 개요
 

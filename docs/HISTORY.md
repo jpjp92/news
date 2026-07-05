@@ -4,6 +4,41 @@
 
 ## 2026-07-05
 
+### Sidebar 날씨 탭 및 도시명 정규화
+
+#### 변경 파일
+
+- `app/api/weather/route.ts`
+- `src/components/Weather.tsx`
+- `src/components/Sidebar.tsx`
+- `src/App.tsx`
+- `.env.example`
+- `tsconfig.json`
+
+#### 변경 내용
+
+- Sidebar에 `날씨` 탭 추가
+- `GET /api/weather?city=...` 추가
+  - OpenWeather 현재 날씨와 5일 예보 조회
+  - `서울`, `마드리드`, `도쿄`, `뉴욕` 등 주요 한글 도시명을 영문 도시명/국가 코드로 alias 정규화
+  - OpenWeather Geocoding API로 위경도를 확인한 뒤 `lat/lon` 기반으로 날씨 조회
+- Weather 화면 추가
+  - 현재 기온, 체감온도, 습도, 풍속, 강수, 기압, 가시거리, 구름량 표시
+  - 5일 예보와 날씨 요약 카드 표시
+  - 로딩 스피너/스켈레톤 추가
+- 도시 조회 실패 시 `CITY_NOT_FOUND`로 분리하고, 사용자 UI에는 간단한 안내 문구만 표시
+- OpenWeather 환경 변수 예시 `OPENWEATHER_API_KEY` 추가
+- 레퍼런스 폴더 `ref`가 TypeScript 검사 대상에 포함되지 않도록 `tsconfig.json` exclude에 추가
+
+#### 검증
+
+- `npm run lint` 통과
+- `/api/weather?city=서울` 정상 응답 확인
+- `/api/weather?city=마드리드` 정상 응답 확인
+- 존재하지 않는 도시명은 404 + `CITY_NOT_FOUND` 반환 확인
+
+---
+
 ### 핵심 분석 기간 비교 및 전체 누적 키워드 보강
 
 #### 변경 파일

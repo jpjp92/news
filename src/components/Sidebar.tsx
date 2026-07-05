@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { LayoutDashboard, Newspaper, TrendingUp, Settings, PanelLeftClose, PanelLeftOpen, X, Search, History } from 'lucide-react';
+import { LayoutDashboard, Newspaper, TrendingUp, Settings, PanelLeftClose, PanelLeftOpen, X, Search, History, CloudSun } from 'lucide-react';
 import { GlassCard } from './GlassCard';
 import { useNews } from '../context/NewsContext';
 
@@ -44,6 +44,7 @@ export function Sidebar({ activeTab = 'dashboard', setActiveTab = () => {}, isOp
                 <NavItem icon={<LayoutDashboard size={20} />} label="대시보드" active={activeTab === 'dashboard'} onClick={() => handleNav('dashboard')} isOpen />
                 <NavItem icon={<Newspaper size={20} />} label="최신 뉴스" active={activeTab === 'articles'} onClick={() => handleNav('articles')} isOpen />
                 <NavItem icon={<TrendingUp size={20} />} label="핵심 분석" active={activeTab === 'analytics'} onClick={() => handleNav('analytics')} isOpen />
+                <NavItem icon={<CloudSun size={20} />} label="날씨" active={activeTab === 'weather'} onClick={() => handleNav('weather')} isOpen />
               </nav>
             </div>
             <div className="p-4 border-t border-black/5 dark:border-white/10">
@@ -81,6 +82,7 @@ export function Sidebar({ activeTab = 'dashboard', setActiveTab = () => {}, isOp
             <NavItem icon={<LayoutDashboard size={20} />} label="대시보드" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} isOpen={isOpen} />
             <NavItem icon={<Newspaper size={20} />} label="최신 뉴스" active={activeTab === 'articles'} onClick={() => setActiveTab('articles')} isOpen={isOpen} />
             <NavItem icon={<TrendingUp size={20} />} label="핵심 분석" active={activeTab === 'analytics'} onClick={() => setActiveTab('analytics')} isOpen={isOpen} />
+            <NavItem icon={<CloudSun size={20} />} label="날씨" active={activeTab === 'weather'} onClick={() => setActiveTab('weather')} isOpen={isOpen} />
           </nav>
         </div>
         <div className="p-4">

@@ -10,6 +10,7 @@ import { Dashboard } from './components/Dashboard';
 import { Articles } from './components/Articles';
 import { Analytics } from './components/Analytics';
 import { Settings } from './components/Settings';
+import { Weather } from './components/Weather';
 import { NewsProvider } from './context/NewsContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { SettingsProvider } from './context/SettingsContext';
@@ -55,6 +56,7 @@ function AppContent() {
           {activeTab === 'dashboard' && <Dashboard setActiveTab={setActiveTab} />}
           {activeTab === 'articles' && <Articles />}
           {activeTab === 'analytics' && <Analytics />}
+          {activeTab === 'weather' && <Weather />}
           {activeTab === 'settings' && <Settings />}
         </main>
       </div>
