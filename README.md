@@ -9,7 +9,7 @@ Next.js 기반 AI 뉴스 트렌드 대시보드입니다. 네이버 뉴스 섹�
 - 최신 세션 자동 로드: 저장된 최신 정상 세션을 먼저 보여주고, 없으면 1회 자동 분석
 - 히스토리 분석: 오늘, 7일, 30일, 전체 기준 세션/키워드/감성/기사 조회
 - 기간 비교 분석: 오늘/7일/30일 데이터를 직전 동일 기간과 비교해 기사 수, 감성 비율, 신규·급상승·소멸 키워드 표시
-- 날씨 탭: OpenWeather 기반 현재 날씨와 5일 예보를 표시하고, 주요 한글 도시명을 영문/국가 코드로 정규화
+- 날씨 탭: 현재는 OpenWeather 기반 현재 날씨와 5일 예보를 표시하며, KMA 하이브리드 전환을 검증 중
 - Supabase 저장: 세션, 카테고리 통계, 키워드 통계, 기사 요약 분리 저장
 - 반응형 UI: 대시보드, 핵심 분석, 최신뉴스, 날씨, 설정 화면 제공 및 탭 전환 시 스크롤 위치 초기화
 - Sidebar 검색: 키워드 입력 또는 최근 검색어 선택 시 최신뉴스 탭으로 이동해 관련 기사 필터링
@@ -109,13 +109,15 @@ SUPABASE_URL=...
 SUPABASE_KEY=...
 GEMINI_MODELS=gemini-2.5-flash,gemini-2.5-flash-lite
 OPENWEATHER_API_KEY=...
+KMA_API_KEY=...
 ```
 
 - `GEMINI_API_KEY`: Gemini API 호출에 필요합니다.
 - `SUPABASE_URL`: Supabase 프로젝트 URL입니다.
 - `SUPABASE_KEY`: 서버에서 DB 저장/조회에 사용하는 키입니다. 운영 환경에서는 service role 키 사용을 전제로 합니다.
 - `GEMINI_MODELS`: 선택값입니다. 쉼표로 구분된 모델 목록을 순환 사용하며 기본값은 `gemini-2.5-flash,gemini-2.5-flash-lite`입니다. 429/503 등 재시도 가능한 에러 발생 시 목록의 다음 모델로 자동 폴백합니다.
-- `OPENWEATHER_API_KEY`: 선택값입니다. Sidebar의 날씨 탭에서 현재 날씨와 5일 예보를 조회할 때 사용합니다.
+- `OPENWEATHER_API_KEY`: 선택값입니다. Sidebar의 날씨 탭에서 OpenWeather 현재 날씨와 5일 예보를 조회할 때 사용합니다.
+- `KMA_API_KEY`: 선택값입니다. 한국 도시 날씨를 기상청 API로 조회하는 KMA 하이브리드 전환에 사용합니다.
 
 ## API
 
@@ -156,6 +158,20 @@ Gemini API 429/503 에러 시 `GEMINI_MODELS` 목록의 다음 모델로 자동 
 요청 도시명은 서버에서 먼저 정규화합니다. 주요 한글 도시명은 `Madrid,ES` 같은 OpenWeather 검색어로 매핑하고, 이후 OpenWeather Geocoding API로 위경도를 얻어 현재 날씨와 5일 예보를 조회합니다.
 
 도시를 찾지 못하면 `CITY_NOT_FOUND` 코드를 반환하며, 사용자 UI에는 OpenWeather 내부 오류나 환경 변수명을 노출하지 않습니다.
+
+#### KMA 하이브리드 검증 결과
+
+한국 도시는 기상청 API, 해외 도시는 OpenWeather를 사용하는 하이브리드 구조를 로컬 스크립트로 검증했습니다.
+
+- 한국 도시 후보 경로: `초단기실황(getUltraSrtNcst) + 단기예보(getVilageFcst) + 육상예보(getLandFcst)`
+- 해외 도시 경로: 기존 OpenWeather Geocoding + Current Weather + 5 day Forecast 유지
+- KMA 실패 시 같은 도시의 OpenWeather 쿼리로 fallback
+- 5일 예보만 표시할 경우 중기예보는 필수 호출이 아니며, 단기예보만으로 5~6일치가 확보됨
+- 서울 기준 조합별 실측 병목은 `getVilageFcst`이며 약 1.2초 수준
+- 추천 초기 구현 조합: `nowcast + village + landMessage` (약 1.2초, 호출 3개)
+- 중기예보는 단기예보가 5일을 못 채울 때 backfill 용도로만 호출하는 방향
+
+로컬 검증 스크립트는 `scripts/` 아래에 있으며 해당 폴더는 `.gitignore`로 제외합니다.
 
 ## 데이터 저장 개요
 

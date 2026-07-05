@@ -4,6 +4,61 @@
 
 ## 2026-07-05
 
+### KMA/OpenWeather 하이브리드 날씨 API 검증
+
+#### 변경 파일
+
+- `README.md`
+- `docs/HISTORY.md`
+- `docs/TODO.md`
+- `scripts/probe-kma-api.mjs` (로컬 전용, git 제외)
+- `scripts/probe-weather-provider-contract.mjs` (로컬 전용, git 제외)
+- `scripts/benchmark-kma-weather-combos.mjs` (로컬 전용, git 제외)
+
+#### 검증 내용
+
+- 기상청 API Hub `KMA_API_KEY`로 실제 응답 구조 확인
+- 기상청 API Hub는 인증키 발급만으로 모든 API가 열리지 않고, 사용할 엔드포인트별 활용신청이 필요함을 확인
+  - 미신청 API는 403과 `활용신청이 필요한 API 입니다. 활용신청 후 다시 시도해 주십시오.` 메시지 반환
+  - 날씨 탭 구현에 필요한 초단기실황, 초단기예보, 단기예보, 기상개황, 육상예보, 중기예보 계열 API를 개별 신청 후 재검증
+- `fct_shrt_reg.php`는 실제 예보값이 아니라 단기예보구역 코드 조회 API임을 확인
+  - `text/plain;charset=EUC-KR`
+  - 전체 row 1142개, 도시 타입 `C` 665개
+- 주요 KMA JSON API 정상 응답 확인
+  - `getUltraSrtNcst`: 초단기실황
+  - `getUltraSrtFcst`: 초단기예보
+  - `getVilageFcst`: 단기예보
+  - `getWthrSituation`: 기상개황
+  - `getLandFcst`: 육상예보 통보문
+  - `getMidTa`: 중기기온
+  - `getMidLandFcst`: 중기육상예보
+  - `getMidFcst`: 중기전망
+- KMA 응답을 현재 `Weather.tsx` 계약(`source/location/current/daily/notes`)으로 조립하는 스크립트 검증
+  - `서울`은 KMA provider로 정상 조립
+  - `마드리드`는 OpenWeather provider로 정상 조립
+
+#### 조합별 레이턴시
+
+서울 기준 병렬 호출 실측:
+
+| 조합 | 호출 수 | 총 시간 | 병목 | 확보 날짜 |
+|---|---:|---:|---|---:|
+| 현재 + 단기 5일 | 2 | 1480ms | 단기예보 1347ms | 6일 |
+| 현재 + 초단기 + 단기 | 3 | 1220ms | 단기예보 1216ms | 6일 |
+| 현재 + 단기 + 육상문장 | 3 | 1200ms | 단기예보 1199ms | 6일 |
+| 현재 + 단기 + 중기 | 4 | 1229ms | 단기예보 1227ms | 6일 |
+| 풀 조합 | 7 | 1187ms | 단기예보 1185ms | 6일 |
+
+#### 결론
+
+- 현재 UI처럼 5일 예보만 표시할 경우 중기예보는 기본 호출에 포함하지 않아도 충분함
+- 초기 KMA 조합은 `초단기실황 + 단기예보 + 육상예보`가 적절함
+- 중기예보는 단기예보가 5일을 채우지 못하는 경우의 backfill 또는 향후 주간 전망 카드용으로 보류
+- 한국 도시는 KMA 우선, 해외 도시는 OpenWeather, KMA 실패 시 OpenWeather fallback 구조가 적합함
+- KMA는 기압/가시거리/돌풍 값이 현재 UI 계약만큼 제공되지 않으므로 실제 적용 시 값 없음 표시(`-`) 보정 필요
+
+---
+
 ### Sidebar 검색 UX 및 모바일 닫기 아이콘 정리
 
 #### 변경 파일
