@@ -155,10 +155,10 @@ export function Analytics() {
           <button
             onClick={fetchData}
             disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-[#232323] dark:bg-[#d7a36f] hover:bg-[#3a3935] dark:hover:bg-[#e0b481] backdrop-blur-md border border-[#232323] dark:border-[#d7a36f] rounded-lg text-white dark:text-[#111316] font-medium transition-all disabled:opacity-50 text-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 bg-[#232323] dark:bg-[#d7a36f] hover:bg-[#3a3935] dark:hover:bg-[#e0b481] backdrop-blur-md border border-[#232323] dark:border-[#d7a36f] rounded-lg text-white dark:text-[#111316] font-medium transition-all disabled:opacity-50 text-[11px] md:text-sm whitespace-nowrap"
           >
-            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-            새로고침
+            <RefreshCw size={14} className={loading ? 'animate-spin md:w-4 md:h-4' : 'md:w-4 md:h-4'} />
+            새 분석 실행
           </button>
         )}
       </div>
@@ -395,7 +395,7 @@ export function Analytics() {
           <GlassCard className="p-12 text-center">
             <BarChart3 size={40} className="mx-auto mb-3 text-gray-300 dark:text-white/20" />
             <p className="text-gray-500 dark:text-white/40 font-medium">해당 기간에 수집된 데이터가 없습니다</p>
-            <p className="text-sm text-gray-400 dark:text-white/25 mt-1">새로고침으로 데이터를 수집해보세요</p>
+            <p className="text-sm text-gray-400 dark:text-white/25 mt-1">새 분석 실행으로 데이터를 수집해보세요</p>
           </GlassCard>
         ) : (
           <div className="space-y-6">
