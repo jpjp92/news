@@ -245,27 +245,27 @@ export function Weather() {
       {!loading && data && (
         <>
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.05fr_0.95fr]">
-            <GlassCard className="overflow-hidden p-6">
-              <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <div className="mb-5 flex items-center gap-2 text-sm font-semibold text-[#6f6a60] dark:text-[#b8b0a5]">
+            <GlassCard className="overflow-hidden p-4 sm:p-6">
+              <div className="flex items-start justify-between gap-4 sm:gap-6">
+                <div className="min-w-0">
+                  <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-[#6f6a60] dark:text-[#b8b0a5] sm:mb-5">
                     <MapPin size={16} />
-                    <span>{data.location.name}{data.location.country ? `, ${data.location.country}` : ''}</span>
+                    <span className="truncate">{data.location.name}{data.location.country ? `, ${data.location.country}` : ''}</span>
                   </div>
-                  <div className="flex items-end gap-3">
-                    <span className="text-6xl font-black tracking-tight text-[#202326] dark:text-[#f2eee7]">{data.current.temp}</span>
-                    <span className="mb-2 text-2xl font-bold text-[#8a8479] dark:text-[#8f8a80]">°C</span>
+                  <div className="flex items-end gap-2 sm:gap-3">
+                    <span className="text-5xl font-black tracking-tight text-[#202326] dark:text-[#f2eee7] sm:text-6xl">{data.current.temp}</span>
+                    <span className="mb-1 text-xl font-bold text-[#8a8479] dark:text-[#8f8a80] sm:mb-2 sm:text-2xl">°C</span>
                   </div>
-                  <p className="mt-3 text-base font-bold text-[#c83a32] dark:text-[#d7a36f]">{data.current.description}</p>
-                  <p className="mt-1 text-sm text-gray-500 dark:text-white/40">
+                  <p className="mt-2 text-sm font-bold text-[#c83a32] dark:text-[#d7a36f] sm:mt-3 sm:text-base">{data.current.description}</p>
+                  <p className="mt-1 text-xs leading-5 text-gray-500 dark:text-white/40 sm:text-sm">
                     체감 {data.current.feelsLike}° · 최저 {data.current.minTemp}° / 최고 {data.current.maxTemp}°
                   </p>
                 </div>
-                <div className="flex items-center justify-center rounded-xl border border-[#ded9cf] bg-white/28 p-4 dark:border-white/10 dark:bg-white/[0.035]">
-                  <img src={iconUrl(data.current.icon)} alt={data.current.description} className="h-28 w-28" />
+                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl border border-[#d6ddd9] bg-[#e8efed]/75 shadow-[0_8px_20px_rgba(55,70,66,0.08)] sm:h-auto sm:w-auto sm:p-4 dark:border-white/10 dark:bg-white/[0.055] dark:shadow-none">
+                  <img src={iconUrl(data.current.icon)} alt={data.current.description} className="h-16 w-16 drop-shadow-[0_2px_3px_rgba(70,76,74,0.28)] sm:h-28 sm:w-28 dark:drop-shadow-none" />
                 </div>
               </div>
-              <div className="mt-6 flex flex-wrap items-center gap-2 text-xs text-gray-400 dark:text-white/30">
+              <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-gray-400 dark:text-white/30 sm:mt-6">
                 <span>업데이트 {formatTime(data.updatedAt)}</span>
                 <span className="h-1 w-1 rounded-full bg-current" />
                 <span>{data.source}</span>
@@ -294,14 +294,14 @@ export function Weather() {
             <StatItem icon={<Thermometer size={15} />} label="체감" value={`${data.current.feelsLike}°C`} />
           </div>
 
-          <GlassCard className="p-5">
+          <GlassCard className="overflow-hidden p-4 sm:p-5">
             <div className="mb-4 flex items-center justify-between gap-3">
               <h3 className="text-sm font-bold uppercase tracking-wider text-gray-700 dark:text-white/80">5일 예보</h3>
-              <span className="text-xs text-gray-400 dark:text-white/30">3시간 예보 기반 일별 요약</span>
+              <span className="hidden text-xs text-gray-400 dark:text-white/30 sm:inline">3시간 예보 기반 일별 요약</span>
             </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="scrollbar-hidden -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-5">
               {data.daily.map(day => (
-                <div key={day.date} className="rounded-lg border border-[#ded9cf] bg-white/28 p-4 dark:border-white/10 dark:bg-white/[0.035]">
+                <div key={day.date} className="min-w-[88%] snap-start rounded-lg border border-[#ded9cf] bg-white/28 p-4 sm:min-w-0 dark:border-white/10 dark:bg-white/[0.035]">
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <p className="text-sm font-bold text-[#202326] dark:text-[#f2eee7]">{formatDay(day.date)}</p>

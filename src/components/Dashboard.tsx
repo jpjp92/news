@@ -18,6 +18,7 @@ interface DashboardProps {
 export function Dashboard({ setActiveTab }: DashboardProps) {
   const { data, modelUsed, collectedAt, loading, error, fetchData, searchQuery } = useNews();
   const [showAllSummaries, setShowAllSummaries] = useState(false);
+  const [showFullTrend, setShowFullTrend] = useState(false);
   const [periodStats, setPeriodStats] = useState<{ week: PeriodStats; month: PeriodStats } | null>(null);
   const periodCardStyles = {
     warm: 'bg-[#e8ded1] dark:bg-[#4a3327]/45 text-[#c83a32] dark:text-[#d7a36f]',
@@ -230,12 +231,12 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
             />
           </GlassCard>
           
-          <GlassCard className="p-4 md:p-6 overflow-hidden border-[#ded9cf] dark:border-white/[0.1] relative">
-            <div className="flex items-center gap-2 mb-4">
+          <GlassCard className="overflow-hidden border-[#ded9cf] p-4 dark:border-white/[0.1] md:p-6">
+            <div className="mb-4 flex items-center gap-2">
               <div className="p-2 bg-[#e8ded1] dark:bg-[#4a3327]/45 rounded-lg text-[#c83a32] dark:text-[#d7a36f]">
                 <Sparkles size={18} />
               </div>
-              <h3 className="text-xs md:text-sm font-bold text-gray-800 dark:text-white">전체 뉴스 트렌드 분석</h3>
+              <h3 className="text-sm font-bold text-gray-800 dark:text-white">전체 뉴스 트렌드 분석</h3>
             </div>
             {loading ? (
               <div className="animate-pulse space-y-3">
@@ -244,25 +245,39 @@ export function Dashboard({ setActiveTab }: DashboardProps) {
                 <div className="h-4 bg-white/50 rounded w-4/5"></div>
               </div>
             ) : (
-              <div className="relative">
-                <div className="absolute -left-3 top-0 bottom-0 w-1 bg-[#c83a32]/25 rounded-full"></div>
-                <p className="text-xs md:text-base text-gray-700 dark:text-slate-200 leading-relaxed font-medium pl-2 italic">
-                  "{data?.overallTrend || "현재 분석된 주요 뉴스 트렌드가 없습니다."}"
-                </p>
+              <div>
+                <div className="border-l-2 border-[#c83a32]/45 pl-3 dark:border-[#d7a36f]/45">
+                  <p className={`text-sm font-medium leading-6 text-gray-700 dark:text-slate-200 md:text-base md:leading-7 ${showFullTrend ? '' : 'line-clamp-5 md:line-clamp-none'}`}>
+                    {data?.overallTrend || "현재 분석된 주요 뉴스 트렌드가 없습니다."}
+                  </p>
+                </div>
+                {(data?.overallTrend?.length || 0) > 140 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowFullTrend(value => !value)}
+                    className="mt-2 flex items-center gap-0.5 pl-3 text-xs font-semibold text-[#c83a32] transition hover:text-[#9f2f2a] md:hidden dark:text-[#d7a36f] dark:hover:text-[#e2b989]"
+                  >
+                    {showFullTrend ? <><ChevronUp size={13} />접기</> : <><ChevronDown size={13} />더보기</>}
+                  </button>
+                )}
                 {!!data?.trendDrivers?.length && (
-                  <div className="flex flex-wrap gap-1.5 mt-4 pl-2">
-                    {data.trendDrivers.slice(0, 5).map(driver => (
-                      <span
+                  <div className="mt-5">
+                    <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-[#8a8479] dark:text-[#8f8a80]">주요 영향 요인</p>
+                    <div className="space-y-2">
+                      {data.trendDrivers.slice(0, 3).map(driver => (
+                        <div
                         key={driver}
-                        className="px-2 py-1 rounded-full bg-[#f2f0ea] dark:bg-white/[0.07] text-[#6f6a60] dark:text-[#d8d2c8] text-xs font-medium border border-[#ded9cf] dark:border-white/10"
-                      >
-                        #{driver}
-                      </span>
-                    ))}
+                        className="flex items-start gap-2 rounded-lg border border-[#ded9cf] bg-[#f2f0ea]/70 px-3 py-2.5 dark:border-white/10 dark:bg-white/[0.055]"
+                        >
+                          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#c83a32] dark:bg-[#d7a36f]" />
+                          <p className="text-xs font-medium leading-5 text-[#6f6a60] dark:text-[#d8d2c8] md:text-sm">{driver}</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
-                <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-3 text-right">
-                  *AI 분석 결과로 실제 사실과 다를 수 있습니다.
+                <p className="mt-3 text-[11px] text-gray-500 dark:text-slate-400 md:text-right">
+                  AI 분석 결과 · 실제 사실과 다를 수 있습니다.
                 </p>
               </div>
             )}
